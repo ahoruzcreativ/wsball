@@ -188,6 +188,8 @@ function newGame() {
 		getLastTimeFrame: getLastTimeFrame,
 		updateGame: updateGame,
 		insertEvent: insertEvent,
-		resetTimeFrame: resetTimeFrame
+		resetTimeFrame: resetTimeFrame,
+		getCurrentGameState: function() { return timeframes[0].gamestate; },
+		getCurrentFrame: function() { return timeframes[0].frame; }
 	};
 }
