@@ -146,7 +146,7 @@ function newGame() {
 		}
 
 		// Remove old timeframes
-		while (timeframes.length > 300) {
+		while (timeframes.length > 100) {
 			timeframes.pop();
 		}
 	}
