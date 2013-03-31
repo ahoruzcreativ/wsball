@@ -1,6 +1,14 @@
+(function() {
+var Vector;
 try {
 	module.exports = newGame;
-} catch(e) { }
+	Vector = require('./vector.js');
+} catch(e) {
+	define(['vector.js'],function(vector) {
+		Vector = vector;
+		return newGame;
+	});
+}
 
 function newGame() {
 
@@ -36,7 +44,7 @@ function newGame() {
 		gamestate: {
 			frame: 0,
 			players: [],
-			ball: {x:0,y:0,vx:0,vy:0}
+			ball: {x:300,y:300,vx:0,vy:0}
 		}
 	}];
 
@@ -120,16 +128,58 @@ function newGame() {
 		// Handle gameplay on new gamestate.
 		ng.ball.x += ng.ball.vx;
 		ng.ball.y += ng.ball.vy;
+		ng.ball.vx *= 0.95;
+		ng.ball.vy *= 0.95;
 
 		ng.players.forEach(function(player) {
 			function n(b){return b?1:0;}
-			player.vx += n(player.keys.right) - n(player.keys.left);
-			player.vy += n(player.keys.up) - n(player.keys.down);
+			var dirx = n(player.keys.right) - n(player.keys.left);
+			var diry = n(player.keys.up) - n(player.keys.down);
+			var len = Math.sqrt(dirx*dirx+diry*diry);
+			if (len > 0) {
+				dirx /= len;
+				diry /= len;
+			}
 			player.x += player.vx;
 			player.y += player.vy;
-			player.vx *= 0.9;
-			player.vy *= 0.9;
+			player.vx *= 0.6;
+			player.vy *= 0.6;
+			var speed = 3;
+			player.vx += dirx * speed;
+			player.vy += diry * speed;
 		});
+
+		var t = new Vector();
+		var radius = 20.0;
+		var bounciness = 0;
+		var mass = 1;
+
+		// Handle paddle - puck collision
+		ng.players.forEach(function(pa) {
+			ng.players.forEach(function(pb) {
+				if (pa === pb) { return; }
+				handleCollision(pa,10,20,pb,10,20);
+    		});
+    		handleCollision(ng.ball,5,10,pa,10,20);
+		});
+		function handleCollision(pa,massa,radiusa,pb,massb,radiusb) {
+			t.set(pa.x,pa.y);
+			t.substract(pb.x,pb.y);
+			var l = t.length();
+			if (l < radiusa+radiusb) {
+				t.normalizeOrZero();
+				var d = t.dot(pa.vx-pb.vx,pa.vy-pb.vy);
+				if (d < 0) {
+					t.multiply(d * (1 + bounciness));
+					var totalmass = massa+massb;
+					pa.vx -= t.x*(massb/totalmass);
+					pa.vy -= t.y*(massb/totalmass);
+
+					pb.vx += t.x*(massa/totalmass);
+					pb.vy += t.y*(massa/totalmass);
+				}
+			}
+		}
 
 		return ng;
 	}
@@ -193,3 +243,5 @@ function newGame() {
 		getCurrentFrame: function() { return timeframes[0].frame; }
 	};
 }
+
+})();
