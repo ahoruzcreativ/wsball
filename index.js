@@ -74,22 +74,11 @@ app.ws.usepath('/client',function(req,next) {
 		}
 
 		function keyEvent(msg) {
-			var lastFrame = getLastFrame();
-			var insertFrame = Math.min(msg.frame,lastFrame);
-			insertEvent(insertFrame,{
+			insertEvent(msg.frame,{
 				type: msg.type,
 				clientid: client.id,
 				key: msg.key
 			});
-			if (msg.frame > getLastFrame()) {
-				// The client was too fast somehow.
-				client.send({
-					type: 'reset',
-					timeframe: getLastTimeFrame()
-				});
-			}
-
-			msg.frame = insertFrame;
 			msg.clientid = client.id;
 			sendToOthers(msg);
 		}
@@ -99,7 +88,8 @@ app.ws.usepath('/client',function(req,next) {
 			syn: function(msg) {
 				client.send({
 					type: 'ack',
-					latency: getLastFrame() - msg.frame
+					oframe: msg.frame,
+					nframe: getLastFrame()
 				});
 			},
 			ack: function(msg) {
@@ -154,3 +144,9 @@ function update() {
 }
 
 setInterval(update,1000*(1/30));
+
+
+process.on('uncaughtException', function (err) {
+	console.dir(err);
+	throw err;
+});

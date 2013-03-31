@@ -109,10 +109,10 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 		var defaultgamerate = 1000*(1/30);
 		var gamerate = defaultgamerate;
 		
-		var latencySolving = 1;
+		var latencySolving = 0;
+		var latencySolvingFrames = 0;
 
-		var serverinterval = undefined;
-		var serverframe = 0;
+		var syninterval = undefined;
 
 		function getPlayer() {
 			return getLastTimeFrame().gamestate.players.filter(function(player) {
@@ -121,22 +121,27 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 		}
 
 		function update() {
-			gameupdateTimeout = setTimeout(update,gamerate*latencySolving);
-			updateGame();
-
-			if (getLastTimeFrame().gamestate.frame % 30 === 0) {
-				send({
-					type: 'syn',
-					frame: serverframe
-				});
+			if (latencySolvingFrames > 0) {
+				latencySolvingFrames--;
+				if (latencySolvingFrames === 0) {
+					latencySolving = 0;
+				}
 			}
+			gameupdateTimeout = setTimeout(update,defaultgamerate+latencySolving);
+			updateGame();
 		}
 
-		function simulateServerFrame() {
-			serverframe++;
+		function synchronizeTime() {
+			send({
+				type: 'syn',
+				frame: getLastTimeFrame().gamestate.frame
+			});
 		}
 
-		ws.onmessage = function(event) {
+		var simulateReceiveLatency = 0;
+		var simulateSendLatency = 0;
+
+		ws.onmessage = function(event) { setTimeout(function() {
 			var msg = JSON.parse(event.data);
 			console.log(msg);
 			({
@@ -145,28 +150,25 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 					timeframes.splice(0,timeframes.length,msg.timeframe);
 					update();
 
-					serverframe = msg.timeframe.gamestate.frame;
-					serverinterval = setInterval(simulateServerFrame,1000*(1/30));
+					syninterval = setInterval(synchronizeTime,1000);
 				},
 				reset: function(msg) {
 					resetTimeFrame(msg.timeframe);
 					console.log('RESET to ',msg.timeframe.gamestate.frame);
 					clearTimeout(gameupdateTimeout);
 					update();
-
-
-					serverframe = msg.timeframe.gamestate.frame;
-					serverinterval = setInterval(simulateServerFrame,1000*(1/30));
-				},
-				syn: function(msg) {
-					send({
-						type: 'ack',
-						latency: getLastTimeFrame().gamestate.frame - msg.frame
-					});
 				},
 				ack: function(msg) {
-					serverframe += msg.latency;
-					latencySolving = Math.max(0,Math.min(2,1+(getLastTimeFrame().gamestate.frame-serverframe)/30.0));
+					function toMs(frames) {
+						return frames*(1000/30);
+					}
+					var now = getLastTimeFrame().gamestate.frame;
+					var clientServerLatency = msg.nframe - msg.oframe;
+					var serverClientLatency = now - msg.nframe;
+					//console.log(clientServerLatency, serverClientLatency, now - msg.oframe);
+					var newLatencySolving = toMs(serverClientLatency)/30;
+					latencySolving = latencySolving*0.5+newLatencySolving*0.5;
+					latencySolvingFrames = 30;
 				},
 				connect: function(msg) {
 					game.insertEvent(msg.frame,{
@@ -195,10 +197,13 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 					});
 				}
 			}[msg.type] || consolelog)(msg);
+		},simulateReceiveLatency);
 		};
 
 		function send(msg) {
-			ws.send(JSON.stringify(msg));
+			setTimeout(function() {
+				ws.send(JSON.stringify(msg));
+			},simulateSendLatency);
 		}
 
 		function keyEvent(event) {
@@ -228,21 +233,28 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 			var player = getPlayer();
 			if (!player) { return; }
 
+			function round(f) {
+				return Math.round(f*100)/100;
+			}
+
+			for(var i=timeframes.length-1;i>=0;i--) {
+				var timeframe = timeframes[i];
+				g.context.globalAlpha = 1-(i/timeframes.length);
+				timeframe.gamestate.players.forEach(function(player) {
+					var x = player.x;
+					var y = 600-player.y;
+					g.fillStyle('blue');
+					g.fillCircle(x,y,30);
+					g.fillStyle('white');
+					g.fillText('Player:'+round(player.x)+','+round(player.y),x,y);
+				});
+			}
+
 			// Draw HUD
 			g.fillStyle('white');
 			g.fillText('Frame:  '+getLastTimeFrame().gamestate.frame,100,100);
-			g.fillText('SFrame: '+serverframe,100,110);
-			g.fillText('Behind: '+(serverframe - getLastTimeFrame().gamestate.frame),100,120);
-			g.fillText('latencySolving: '+latencySolving,100,130);
+			g.fillText('latencySolving: '+round(latencySolving),100,110);
 
-			getLastTimeFrame().gamestate.players.forEach(function(player) {
-				var x = player.x;
-				var y = 600-player.y;
-				g.fillStyle('blue');
-				g.fillCircle(x,y,30);
-				g.fillStyle('white');
-				g.fillText('Player:'+player.x+','+player.y,x,y);
-			});
 			next(g);
 		}
 		function keydown(key) {

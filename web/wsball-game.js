@@ -6,7 +6,7 @@ function newGame() {
 
 	function assert(b) { if(!b) {
 		debugger;
-		throw 'Assertion failed';
+		throw new Error('Assertion failed');
 	} }
 	function cloneArray(arr) {
 		var r = [];
@@ -68,7 +68,7 @@ function newGame() {
 		var og = gamestate;
 		var playerLookup = {};
 
-		// Create new gamestate.
+		// Create new gamestate from old gamestate.
 		var ng = {
 			frame: og.frame+1,
 
