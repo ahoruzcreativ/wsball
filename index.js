@@ -137,7 +137,7 @@ function update() {
 		':'+tf.gamestate.players.length,
 		'*'+tf.events.length,
 		tf.gamestate.players.map(function(player) {
-			return '('+player.x+','+player.y+')';
+			return '('+Math.round(player.x)+','+Math.round(player.y)+')';
 		}).join(' ')
 		].join(' '));
 	updateGame();
