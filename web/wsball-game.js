@@ -8,6 +8,21 @@ function newGame() {
 		debugger;
 		throw 'Assertion failed';
 	} }
+	function cloneArray(arr) {
+		var r = [];
+		for(var i=0;i<arr.length;i++) {
+			r.push(arr[i]);
+		}
+		return r;
+	}
+	function cloneObject(obj) {
+		var r = {};
+		var keys = Object.keys(obj);
+		for(var i=0;i<keys.length;i++) {
+			r[keys[i]] = obj[keys[i]];
+		}
+		return r;
+	}
 
 	var futureEvents = [];
 	var timeframes = [{
@@ -54,7 +69,7 @@ function newGame() {
 			players: og.players.map(function(player) {
 				return playerLookup[player.clientid] = {
 					clientid: player.clientid,
-					keys: Object.clone(player.keys),
+					keys: cloneObject(player.keys),
 					x: player.x,
 					y: player.y,
 					vx: player.vx,

@@ -1,7 +1,12 @@
 var express = require('./express-ws');
 var wsball_game = require('./web/wsball-game');
-require('sugar');
+//require('sugar');
 Array.prototype.contains = function(e) { return this.indexOf(e) >= 0; }
+Array.prototype.remove = function(e) {
+	var i = this.indexOf(e);
+	this.splice(i,1);
+};
+
 
 var app = express();
 
