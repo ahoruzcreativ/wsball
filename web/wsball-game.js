@@ -127,8 +127,8 @@ function newGame() {
 			player.vy += n(player.keys.up) - n(player.keys.down);
 			player.x += player.vx;
 			player.y += player.vy;
-			player.vx *= 0.99;
-			player.vy *= 0.99;
+			player.vx *= 0.9;
+			player.vy *= 0.9;
 		});
 
 		return ng;
