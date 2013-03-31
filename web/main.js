@@ -1,4 +1,4 @@
-define(['platform','game','vector','staticcollidable','linesegment','editor','required','state','level','mouse','collision','keyboard','quake','resources'],function(platform,Game,Vector,StaticCollidable,LineSegment,editor,required,state,level,mouse,collision,keyboard,quake,resources) {
+define(['platform','game','vector','staticcollidable','linesegment','editor','required','state','level','mouse','collision','keyboard','quake','resources','wsball-game'],function(platform,Game,Vector,StaticCollidable,LineSegment,editor,required,state,level,mouse,collision,keyboard,quake,resources,newGame) {
 	var t = new Vector(0,0);
 	var t2 = new Vector(0,0);
 	var rs = {
@@ -244,11 +244,15 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 					var x = player.x;
 					var y = 600-player.y;
 					g.fillStyle('blue');
-					g.fillCircle(x,y,30);
+					g.fillCircle(x,y,20);
 					g.fillStyle('white');
 					g.fillText('Player:'+round(player.x)+','+round(player.y),x,y);
 				});
+
+				g.fillStyle('white');
+				g.fillCircle(timeframe.gamestate.ball.x,600-timeframe.gamestate.ball.y,10);
 			}
+
 
 			// Draw HUD
 			g.fillStyle('white');
