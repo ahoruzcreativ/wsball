@@ -23,6 +23,12 @@ function newGame() {
 		}
 		return r;
 	}
+	function findIndex(arr,f) {
+		for(var i=0;i<arr.length;i++) {
+			if (f(arr[i],i)) { return i; }
+		}
+		return -1;
+	}
 
 	var futureEvents = [];
 	var timeframes = [{
@@ -153,7 +159,7 @@ function newGame() {
 
 	function insertEvent(frame,event) {
 		if (frame > getLastTimeFrame().gamestate.frame) { // Event in the future?
-			var index = futureEvents.findIndex(function(futureEvent) {
+			var index = findIndex(futureEvents, function(futureEvent) {
 				return frame < futureEvent.frame;
 			});
 			if (index === -1) { index = futureEvents.length; }
