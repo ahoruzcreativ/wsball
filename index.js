@@ -30,6 +30,7 @@ app.ws.usepath('/client',function(req,next) {
 	var client = {
 		id: newid++,
 		ws: ws,
+		//lastsyn: 0,
 		send: function(msg) {
 			if (this.ws.connected) {
 				this.ws.send(JSON.stringify(msg));
@@ -94,7 +95,16 @@ app.ws.usepath('/client',function(req,next) {
 		}
 		({
 			down: keyEvent,
-			up: keyEvent
+			up: keyEvent,
+			syn: function(msg) {
+				client.send({
+					type: 'ack',
+					latency: getLastFrame() - msg.frame
+				});
+			},
+			ack: function(msg) {
+				client.latency = msg.latency;
+			}
 		}[msg.type])(msg);
 	});
 	ws.on('error',function() {
@@ -131,11 +141,16 @@ function update() {
 		}).join(' ')
 		].join(' '));
 	updateGame();
+
+	/*var curframe = getLastTimeFrame().gamestate.frame;
+	clients.forEach(function(client) {
+		if (curframe - client.lastsyn < 30) { return; }
+		client.lastsyn = curframe;
+		client.send({
+			type: 'syn',
+			frame: curframe
+		});
+	});*/
 }
 
 setInterval(update,1000*(1/30));
-
-process.on('uncaughtException', function(err) {
-  console.log(err.stack);
-  throw err;
-});

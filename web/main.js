@@ -67,7 +67,16 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 			disable: disable
 		};
 		function enable() {
-			var ws = new WebSocket('ws://localhost:8085/client', 'game');
+			var loc = window.location, new_uri;
+			if (loc.protocol === 'https:') {
+				new_uri = 'wss:';
+			} else {
+				new_uri = 'ws:';
+			}
+			new_uri += '//' + loc.host;
+			new_uri += '/client';
+
+			var ws = new WebSocket(new_uri, 'game');
 			ws.onopen = function() {
 				game.changeState(gameplayState(ws));
 			};
@@ -95,7 +104,15 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 		var updateGame = game.updateGame;
 		var resetTimeFrame = game.resetTimeFrame;
 		var clientid = undefined;
-		var gameinterval = undefined;
+
+		var gameupdateTimeout = undefined;
+		var defaultgamerate = 1000*(1/30);
+		var gamerate = defaultgamerate;
+		
+		var latencySolving = 1;
+
+		var serverinterval = undefined;
+		var serverframe = 0;
 
 		function getPlayer() {
 			return getLastTimeFrame().gamestate.players.filter(function(player) {
@@ -104,7 +121,19 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 		}
 
 		function update() {
+			gameupdateTimeout = setTimeout(update,gamerate*latencySolving);
 			updateGame();
+
+			if (getLastTimeFrame().gamestate.frame % 30 === 0) {
+				send({
+					type: 'syn',
+					frame: serverframe
+				});
+			}
+		}
+
+		function simulateServerFrame() {
+			serverframe++;
 		}
 
 		ws.onmessage = function(event) {
@@ -114,13 +143,30 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 				initialize: function(msg) {
 					clientid = msg.clientid;
 					timeframes.splice(0,timeframes.length,msg.timeframe);
-					gameinterval = setInterval(update,1000*(1/30));
+					update();
+
+					serverframe = msg.timeframe.gamestate.frame;
+					serverinterval = setInterval(simulateServerFrame,1000*(1/30));
 				},
 				reset: function(msg) {
 					resetTimeFrame(msg.timeframe);
 					console.log('RESET to ',msg.timeframe.gamestate.frame);
-					clearInterval(gameinterval);
-					gameinterval = setInterval(update,1000*(1/30)+1);
+					clearTimeout(gameupdateTimeout);
+					update();
+
+
+					serverframe = msg.timeframe.gamestate.frame;
+					serverinterval = setInterval(simulateServerFrame,1000*(1/30));
+				},
+				syn: function(msg) {
+					send({
+						type: 'ack',
+						latency: getLastTimeFrame().gamestate.frame - msg.frame
+					});
+				},
+				ack: function(msg) {
+					serverframe += msg.latency;
+					latencySolving = Math.max(0,Math.min(2,1+(getLastTimeFrame().gamestate.frame-serverframe)/30.0));
 				},
 				connect: function(msg) {
 					game.insertEvent(msg.frame,{
@@ -151,14 +197,18 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 			}[msg.type] || consolelog)(msg);
 		};
 
+		function send(msg) {
+			ws.send(JSON.stringify(msg));
+		}
+
 		function keyEvent(event) {
 			var timeframe = getLastTimeFrame();
 			timeframe.events.push(Object.merge({
 				clientid: clientid
 			},event));
-			ws.send(JSON.stringify(Object.merge({
+			send(Object.merge({
 				frame: timeframe.gamestate.frame
-			},event)));
+			},event));
 		}
 
 		function enable() {
@@ -180,7 +230,10 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 
 			// Draw HUD
 			g.fillStyle('white');
-			g.fillText('Frame: '+getLastTimeFrame().gamestate.frame,100,100);
+			g.fillText('Frame:  '+getLastTimeFrame().gamestate.frame,100,100);
+			g.fillText('SFrame: '+serverframe,100,110);
+			g.fillText('Behind: '+(serverframe - getLastTimeFrame().gamestate.frame),100,120);
+			g.fillText('latencySolving: '+latencySolving,100,130);
 
 			getLastTimeFrame().gamestate.players.forEach(function(player) {
 				var x = player.x;
