@@ -74,11 +74,23 @@ app.ws.usepath('/client',function(req,next) {
 		}
 
 		function keyEvent(msg) {
-			insertEvent(msg.frame,{
-				type: msg.type,
-				clientid: client.id,
-				key: msg.key
-			});
+			function insert() {
+				insertEvent(msg.frame,{
+					type: msg.type,
+					clientid: client.id,
+					key: msg.key
+				});
+			}
+			if (msg.frame < timeframes[timeframes.length-1].gamestate.frame) {
+				msg.frame = timeframes[timeframes.length-1].gamestate.frame;
+				insert();
+				send({
+					type: 'reset',
+					timeframe: getLastTimeFrame()
+				});
+			} else {
+				insert();
+			}
 			msg.clientid = client.id;
 			sendToOthers(msg);
 		}
