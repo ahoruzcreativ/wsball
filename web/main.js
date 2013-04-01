@@ -109,6 +109,7 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 		var defaultgamerate = 1000*(1/30);
 		var gamerate = defaultgamerate;
 		
+		var latencyMs = 0;
 		var latencySolving = 0;
 		var latencySolvingFrames = 0;
 
@@ -140,6 +141,7 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 
 		var simulateReceiveLatency = 0;
 		var simulateSendLatency = 0;
+		var simulateLatencyUnstability = 0;
 
 		ws.onmessage = function(event) { setTimeout(function() {
 			var msg = JSON.parse(event.data);
@@ -163,12 +165,16 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 						return frames*(1000/30);
 					}
 					var now = getLastTimeFrame().gamestate.frame;
-					var clientServerLatency = msg.nframe - msg.oframe;
-					var serverClientLatency = now - msg.nframe;
-					//console.log(clientServerLatency, serverClientLatency, now - msg.oframe);
-					var newLatencySolving = toMs(serverClientLatency)/30;
-					latencySolving = latencySolving*0.5+newLatencySolving*0.5;
+					var roundtripFrames = now - msg.oframe;
+					var clientFrames = msg.oframe + roundtripFrames*0.5;
+					var framesDifference = clientFrames - msg.nframe;
+
+					// How fast do we want to get to server's time
 					latencySolvingFrames = 30;
+
+					var newLatencySolving = toMs(framesDifference)/latencySolvingFrames;
+					latencySolving = latencySolving*0.5+newLatencySolving*0.5;
+					latencyMs = toMs(now-msg.oframe);
 				},
 				connect: function(msg) {
 					game.insertEvent(msg.frame,{
@@ -197,13 +203,13 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 					});
 				}
 			}[msg.type] || consolelog)(msg);
-		},simulateReceiveLatency);
+		},simulateReceiveLatency+Math.random()*simulateLatencyUnstability-simulateLatencyUnstability*0.5);
 		};
 
 		function send(msg) {
 			setTimeout(function() {
 				ws.send(JSON.stringify(msg));
-			},simulateSendLatency);
+			},simulateSendLatency+Math.random()*simulateLatencyUnstability-simulateLatencyUnstability*0.5);
 		}
 
 		function keyEvent(event) {
@@ -258,6 +264,7 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 			g.fillStyle('white');
 			g.fillText('Frame:  '+getLastTimeFrame().gamestate.frame,100,100);
 			g.fillText('latencySolving: '+round(latencySolving),100,110);
+			g.fillText('Latency: '+round(latencyMs),100,120);
 
 			next(g);
 		}
