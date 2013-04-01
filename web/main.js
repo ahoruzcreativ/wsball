@@ -80,6 +80,9 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 			ws.onopen = function() {
 				game.changeState(gameplayState(ws));
 			};
+			ws.onclose = function() {
+				window.location.reload();
+			};
 		}
 		function disable() {
 
