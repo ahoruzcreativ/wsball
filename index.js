@@ -84,7 +84,7 @@ app.ws.usepath('/client',function(req,next) {
 			if (msg.frame < timeframes[timeframes.length-1].gamestate.frame) {
 				msg.frame = timeframes[timeframes.length-1].gamestate.frame;
 				insert();
-				send({
+				client.send({
 					type: 'reset',
 					timeframe: getLastTimeFrame()
 				});

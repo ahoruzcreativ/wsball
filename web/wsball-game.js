@@ -226,10 +226,13 @@ function newGame() {
 	function resetTimeFrame(timeframe) {
 		var newframe = timeframe.gamestate.frame;
 		var lastframe = getLastTimeFrame().gamestate.frame;
-		assert(newframe <= lastframe);
-		var newindex = lastframe - newframe;
-		timeframes.splice(0,newindex+1,timeframe);
-		assert(timeframes[0].gamestate.frame === (timeframes[1].gamestate.frame+1));
+		if (newframe <= lastframe) {
+			var newindex = lastframe - newframe;
+			timeframes.splice(0,newindex+1,timeframe);
+			assert(timeframes[0].gamestate.frame === (timeframes[1].gamestate.frame+1));
+		} else {
+			timeframes.splice(0,timeframes.length,timeframe);
+		}
 	}
 
 	return {
