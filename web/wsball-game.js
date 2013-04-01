@@ -160,7 +160,17 @@ function newGame() {
 				if (pa === pb) { return; }
 				handleCollision(pa,10,20,pb,10,20);
     		});
-    		handleCollision(ng.ball,5,10,pa,10,20);
+    		if (handleCollision(ng.ball,5,10,pa,10,20) && pa.keys['x']) {
+    			t.set(ng.ball.x,ng.ball.y);
+    			t.substract(pa.x,pa.y);
+    			t.normalizeOrZero();
+    			var pspeed = t.dot(pa.vx,pa.vy);
+    			t.multiply(pspeed + 10);
+    			ng.ball.vx = t.x;
+    			ng.ball.vy = t.y;
+
+    			delete pa.keys['x'];
+    		}
 		});
 		function handleCollision(pa,massa,radiusa,pb,massb,radiusb) {
 			t.set(pa.x,pa.y);
@@ -177,8 +187,10 @@ function newGame() {
 
 					pb.vx += t.x*(massa/totalmass);
 					pb.vy += t.y*(massa/totalmass);
+					return true;
 				}
 			}
+			return false;
 		}
 
 		return ng;
