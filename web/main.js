@@ -246,7 +246,7 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 				return Math.round(f*100)/100;
 			}
 
-			for(var i=timeframes.length-1;i>=0;i--) {
+			for(var i=1-1;i>=0;i--) {
 				var timeframe = timeframes[i];
 				g.context.globalAlpha = 1-(i/timeframes.length);
 				timeframe.gamestate.players.forEach(function(player) {

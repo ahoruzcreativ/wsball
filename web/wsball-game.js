@@ -154,23 +154,23 @@ function newGame() {
 		var bounciness = 0;
 		var mass = 1;
 
-		// Handle paddle - puck collision
+		// Handle player - player and player - ball collision
 		ng.players.forEach(function(pa) {
 			ng.players.forEach(function(pb) {
 				if (pa === pb) { return; }
 				handleCollision(pa,10,20,pb,10,20);
-    		});
-    		if (handleCollision(ng.ball,5,10,pa,10,20) && pa.keys['x']) {
-    			t.set(ng.ball.x,ng.ball.y);
-    			t.substract(pa.x,pa.y);
-    			t.normalizeOrZero();
-    			var pspeed = t.dot(pa.vx,pa.vy);
-    			t.multiply(pspeed + 10);
-    			ng.ball.vx = t.x;
-    			ng.ball.vy = t.y;
+			});
+			if (handleCollision(ng.ball,5,10,pa,10,20) && pa.keys['x']) {
+				t.set(ng.ball.x,ng.ball.y);
+				t.substract(pa.x,pa.y);
+				t.normalizeOrZero();
+				var pspeed = t.dot(pa.vx,pa.vy);
+				t.multiply(pspeed + 10);
+				ng.ball.vx = t.x;
+				ng.ball.vy = t.y;
 
-    			delete pa.keys['x'];
-    		}
+				delete pa.keys['x'];
+			}
 		});
 		function handleCollision(pa,massa,radiusa,pb,massb,radiusb) {
 			t.set(pa.x,pa.y);
