@@ -30,7 +30,7 @@ app.ws.usepath('/client',function(req,next) {
 	var client = {
 		id: newid++,
 		ws: ws,
-		//lastsyn: 0,
+		lastframe: getLastFrame(),
 		send: function(msg) {
 			if (this.ws.connected) {
 				this.ws.send(JSON.stringify(msg));
@@ -103,6 +103,7 @@ app.ws.usepath('/client',function(req,next) {
 					oframe: msg.frame,
 					nframe: getLastFrame()
 				});
+				client.lastframe = msg.frame;
 			},
 			ack: function(msg) {
 				client.latency = msg.latency;
@@ -144,6 +145,13 @@ function update() {
 		].join(' '));
 	updateGame();
 
+	// Trim timeframes that will never be used (the oldest timeframe in use by clients)
+	var minimalframe = clients.reduce(function(prev,client) {
+		return client.lastframe < prev ? client.lastframe : prev;
+	},getLastFrame());
+	while (timeframes.length > 0 && timeframes[timeframes.length-1].gamestate.frame < minimalframe) {
+		timeframes.pop();
+	}
 	/*var curframe = getLastTimeFrame().gamestate.frame;
 	clients.forEach(function(client) {
 		if (curframe - client.lastsyn < 30) { return; }
