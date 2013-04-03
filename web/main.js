@@ -105,7 +105,6 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 		var timeframes = game.timeframes;
 		var getLastTimeFrame = game.getLastTimeFrame;
 		var updateGame = game.updateGame;
-		var resetTimeFrame = game.resetTimeFrame;
 		var clientid = undefined;
 
 		var gameupdateTimeout = undefined;
@@ -117,6 +116,8 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 		var latencySolvingFrames = 0;
 
 		var syninterval = undefined;
+
+		var requestingReset = false;
 
 		function getPlayer() {
 			return getLastTimeFrame().gamestate.players.filter(function(player) {
@@ -135,20 +136,67 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 			updateGame();
 		}
 
-		function synchronizeTime() {
-			send({
-				type: 'syn',
-				frame: getLastTimeFrame().gamestate.frame
-			});
+		var simulateLatency = false;
+		var simulateLatencyBase = 100;
+		var simulateLatencyUnstability = 50;
+		var simulateLatencySpikeAmount = 500;
+		var simulateLatencySpikeOccurance = 0.01;
+
+		function latency() {
+			return simulateLatencyBase
+				+  (Math.random()*simulateLatencyUnstability-simulateLatencyUnstability*0.5)
+				+  (Math.random() < simulateLatencySpikeOccurance ? simulateLatencySpikeAmount : 0);
 		}
 
-		var simulateReceiveLatency = 0;
-		var simulateSendLatency = 0;
-		var simulateLatencyUnstability = 0;
+		function latencySimulator(cb) {
+			var timeout = null;
+			var queue = [];
 
-		ws.onmessage = function(event) { setTimeout(function() {
+			function push(/*...*/) {
+				if (!simulateLatency) {
+					return cb.apply(null,arguments);
+				}
+				queue.push({
+					trigger: Date.now() + latency(),
+					args: arguments
+				});
+				waitForDequeue();
+			}
+
+			function waitForDequeue() {
+				if (queue.length > 0 && !timeout) {
+					timeout = setTimeout(dequeue,queue[0].trigger - Date.now());
+				}
+			}
+
+			function dequeue() {
+				var now = Date.now();
+				while (queue.length > 0 && queue[0].trigger <= now) {
+					cb.apply(null,queue.shift().args);
+				}
+				timeout = null;
+				waitForDequeue();
+			}
+
+			return push;
+		}
+
+		var send = latencySimulator(function(msg) {
+			ws.send(JSON.stringify(msg));
+		});
+
+		ws.onmessage = latencySimulator(function(event) {
 			var msg = JSON.parse(event.data);
 			console.log(msg);
+
+			if (msg.frame && game.isFramePrehistoric(msg.frame)) {
+				requestingReset = true;
+				send({
+					type: 'resetrequest'
+				});
+				return;
+			}
+
 			({
 				initialize: function(msg) {
 					clientid = msg.clientid;
@@ -158,8 +206,9 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 					syninterval = setInterval(synchronizeTime,1000);
 				},
 				reset: function(msg) {
-					resetTimeFrame(msg.timeframe);
-					console.log('RESET to ',msg.timeframe.gamestate.frame);
+					requestingReset = false;
+					game.resetToTimeFrames(msg.timeframes);
+					console.log('RESET to ',msg.timeframes[0].gamestate.frame);
 					clearTimeout(gameupdateTimeout);
 					update();
 				},
@@ -206,13 +255,13 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 					});
 				}
 			}[msg.type] || consolelog)(msg);
-		},simulateReceiveLatency+Math.random()*simulateLatencyUnstability-simulateLatencyUnstability*0.5);
-		};
+		});
 
-		function send(msg) {
-			setTimeout(function() {
-				ws.send(JSON.stringify(msg));
-			},simulateSendLatency+Math.random()*simulateLatencyUnstability-simulateLatencyUnstability*0.5);
+		function synchronizeTime() {
+			send({
+				type: 'syn',
+				frame: getLastTimeFrame().gamestate.frame
+			});
 		}
 
 		function keyEvent(event) {

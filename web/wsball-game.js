@@ -214,13 +214,14 @@ function newGame() {
 		}
 
 		// Remove old timeframes
-		while (timeframes.length > 100) {
+		while (timeframes.length > 15) {
 			timeframes.pop();
 		}
 	}
 
 	function insertEvent(frame,event) {
-		if (frame > getLastTimeFrame().gamestate.frame) { // Event in the future?
+		var frameIndex = getLastTimeFrame().gamestate.frame - frame;
+		if (frameIndex < 0) { // Event in the future?
 			var index = findIndex(futureEvents, function(futureEvent) {
 				return frame < futureEvent.frame;
 			});
@@ -229,22 +230,18 @@ function newGame() {
 				frame: frame,
 				event: event
 			});
-		} else { // Event of current frame or the past?
+		} else if (frameIndex < timeframes.length) { // Event of current frame or the past?
 			var timeframe = getTimeFrame(frame);
 			timeframe.events.push(event);
 			recalculateGameStates(frame);
+		} else {
+			throw new Error('The inserted frame is prehistoric: it is too old to simulate');
 		}
 	}
-	function resetTimeFrame(timeframe) {
-		var newframe = timeframe.gamestate.frame;
-		var lastframe = getLastTimeFrame().gamestate.frame;
-		if (newframe <= lastframe) {
-			var newindex = lastframe - newframe;
-			timeframes.splice(0,newindex+1,timeframe);
-			assert(timeframes[0].gamestate.frame === (timeframes[1].gamestate.frame+1));
-		} else {
-			timeframes.splice(0,timeframes.length,timeframe);
-		}
+	function resetToTimeFrames(newTimeframes) {
+		timeframes.length = 0;
+		Array.prototype.push.apply(timeframes,newTimeframes);
+		assert(timeframes[0].gamestate.frame === (timeframes[1].gamestate.frame+1));
 	}
 
 	return {
@@ -253,9 +250,10 @@ function newGame() {
 		getLastTimeFrame: getLastTimeFrame,
 		updateGame: updateGame,
 		insertEvent: insertEvent,
-		resetTimeFrame: resetTimeFrame,
+		resetToTimeFrames: resetToTimeFrames,
+		isFramePrehistoric: function(frame) { return frame < timeframes[timeframes.length-1].gamestate.frame; },
 		getCurrentGameState: function() { return timeframes[0].gamestate; },
-		getCurrentFrame: function() { return timeframes[0].frame; }
+		getCurrentFrame: function() { return timeframes[0].gamestate.frame; }
 	};
 }
 

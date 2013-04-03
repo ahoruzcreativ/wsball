@@ -73,6 +73,13 @@ app.ws.usepath('/client',function(req,next) {
 			case 'binary': throw "Unsupported"; break;
 		}
 
+		function sendReset() {
+			client.send({
+				type: 'reset',
+				timeframes: timeframes
+			});
+		}
+
 		function keyEvent(msg) {
 			function insert() {
 				insertEvent(msg.frame,{
@@ -84,10 +91,7 @@ app.ws.usepath('/client',function(req,next) {
 			if (msg.frame < timeframes[timeframes.length-1].gamestate.frame) {
 				msg.frame = timeframes[timeframes.length-1].gamestate.frame;
 				insert();
-				client.send({
-					type: 'reset',
-					timeframe: getLastTimeFrame()
-				});
+				sendReset();
 			} else {
 				insert();
 			}
@@ -107,6 +111,9 @@ app.ws.usepath('/client',function(req,next) {
 			},
 			ack: function(msg) {
 				client.latency = msg.latency;
+			},
+			resetrequest: function(msg) {
+				sendReset();
 			}
 		}[msg.type])(msg);
 	});
