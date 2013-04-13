@@ -32,10 +32,32 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 	g.objects.lists.collectable = g.objects.createIndexList('collectable');
 	g.objects.lists.shadow = g.objects.createIndexList('shadow');
 
+	function safeRefresh() {
+		if (!safeRefresh.disconnectMessage) {
+			var disconnectMessage = safeRefresh.disconnectMessage = document.createElement('div');
+			disconnectMessage.appendChild(document.createTextNode('Disconnected'));
+			document.body.appendChild(disconnectMessage);
+		}
+
+		function pollConnection() {
+			var r = new XMLHttpRequest();
+			r.open("GET", "/", true);
+			r.onreadystatechange = function () {
+				if (r.readyState != 4 || r.status != 200) {
+					setTimeout(pollConnection,1000);
+				} else {
+					window.location.reload(true);
+				}
+			};
+			r.send();
+		}
+		pollConnection();
+	}
+
 	// Auto-refresh
 	(function() {
 		var timeout = setTimeout(function() {
-			document.location.reload(true);
+			safeRefresh();
 		}, 3000);
 		g.once('keydown',function() {
 			disable();
@@ -81,7 +103,7 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 				game.changeState(gameplayState(ws));
 			};
 			ws.onclose = function() {
-				window.location.reload();
+				safeRefresh();
 			};
 		}
 		function disable() {
