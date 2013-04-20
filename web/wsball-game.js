@@ -1,4 +1,13 @@
 define(['./vector','./linesegment'],function(Vector,LineSegment) {
+	var constants = {
+		ball_radius: 10,
+		ball_mass: 5,
+		ball_bounciness: 0.5,
+
+		player_mass: 10,
+		player_radius: 20,
+		player_bounciness: 0
+	};
 	return function newGame() {
 	function assert(b) { if(!b) {
 		debugger;
@@ -31,6 +40,7 @@ define(['./vector','./linesegment'],function(Vector,LineSegment) {
 		events: [],
 		gamestate: {
 			frame: 0,
+			scores: [0,0],
 			players: [],
 			ball: {x:300,y:300,vx:0,vy:0}
 		}
@@ -95,13 +105,35 @@ define(['./vector','./linesegment'],function(Vector,LineSegment) {
 		return nextGameState(timeframe.gamestate, timeframe.events);
 	}
 
+	function reset(gamestate) {
+		var gs = gamestate;
+		gs.players.forEach(function(player) {
+			player.x = 400;
+			player.y = 300;
+			player.vx = 0;
+			player.vy = 0;
+		});
+		gs.ball.x = 400;
+		gs.ball.y = 300;
+		gs.ball.vx = 0;
+		gs.ball.vy = 0;
+	}
+
 	function nextGameState(gamestate,events) {
+		var t = new Vector();
+		var t2 = new Vector();
+
+
 		var og = gamestate;
 		var playerLookup = {};
+
+		assert(og.scores);
 
 		// Create new gamestate from old gamestate.
 		var ng = {
 			frame: og.frame+1,
+
+			scores: og.scores.splice(0),
 
 			players: og.players.map(function(player) {
 				return playerLookup[player.clientid] = {
@@ -148,6 +180,16 @@ define(['./vector','./linesegment'],function(Vector,LineSegment) {
 			}[event.type])(ng,event);
 		});
 
+		for(var i=0;i<level.teams.length;i++) {
+			var team = level.teams[i];
+			var collisions = [];
+			getCollisions(ng.ball,constants.ball_radius,team.goals,collisions);
+			if (collisions.length > 0) {
+				ng.scores[i]++;
+				reset(ng);
+			}
+		}
+
 		// Handle gameplay on new gamestate.
 		ng.ball.x += ng.ball.vx;
 		ng.ball.y += ng.ball.vy;
@@ -172,8 +214,6 @@ define(['./vector','./linesegment'],function(Vector,LineSegment) {
 			player.vy += diry * speed;
 		});
 
-		var t = new Vector();
-		var t2 = new Vector();
 		var radius = 20.0;
 		var bounciness = 0;
 		var mass = 1;
@@ -182,9 +222,15 @@ define(['./vector','./linesegment'],function(Vector,LineSegment) {
 		ng.players.forEach(function(pa) {
 			ng.players.forEach(function(pb) {
 				if (pa === pb) { return; }
-				handleCircleCollision(pa,10,20,pb,10,20);
+				handleCircleCollision(
+					pa,constants.player_mass,constants.player_radius,
+					pb,constants.player_mass,constants.player_radius
+				);
 			});
-			if (handleCircleCollision(ng.ball,5,10,pa,10,20) && pa.keys['x']) {
+			if (handleCircleCollision(
+					ng.ball,constants.ball_mass,constants.ball_radius,
+					pa,constants.player_mass,constants.player_radius
+				) && pa.keys['x']) {
 				t.set(ng.ball.x,ng.ball.y);
 				t.substract(pa.x,pa.y);
 				t.normalizeOrZero();
@@ -218,9 +264,9 @@ define(['./vector','./linesegment'],function(Vector,LineSegment) {
 		}
 
 		ng.players.forEach(function(p) {
-			handleLineCollision(p,20,0, level.lines);
+			handleLineCollision(p,constants.player_radius,constants.player_bounciness, level.lines);
 		});
-		handleLineCollision(ng.ball,10,0.5, level.lines);
+		handleLineCollision(ng.ball,constants.ball_radius,constants.ball_bounciness, level.lines);
 
 		function getCollisions(o,radius, lineSegments, collisions) {
 			for(var i=0;i<lineSegments.length;i++) {

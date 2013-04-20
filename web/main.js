@@ -345,6 +345,7 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 			g.fillText('Frame:  '+getLastTimeFrame().gamestate.frame,100,100);
 			g.fillText('latencySolving: '+round(latencySolving),100,110);
 			g.fillText('Latency: '+round(latencyMs),100,120);
+			g.fillText('Scores: '+getLastTimeFrame().gamestate.scores[0] + ' - ' + getLastTimeFrame().gamestate.scores[1],100,130);
 
 			next(g);
 		}

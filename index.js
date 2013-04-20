@@ -1,5 +1,11 @@
 var express = require('./express-ws');
-var wsball_game = require('./web/wsball-game');
+
+var requirejs = require('requirejs');
+requirejs.config({
+	nodeRequire: require
+});
+requirejs(['./web/wsball-game'],function(wsball_game) {
+
 //require('sugar');
 Array.prototype.contains = function(e) { return this.indexOf(e) >= 0; }
 Array.prototype.remove = function(e) {
@@ -176,4 +182,6 @@ setInterval(update,1000*(1/30));
 process.on('uncaughtException', function (err) {
 	console.dir(err);
 	throw err;
+});
+
 });
