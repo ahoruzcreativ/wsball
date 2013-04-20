@@ -1,6 +1,4 @@
-(function() {
-
-var m = function() {
+define(function() {
 	function Vector(x,y) {
 		this.x = x;
 		this.y = y;
@@ -126,12 +124,4 @@ var m = function() {
 	Vector.yaxis = new Vector(0,1);
 
 	return Vector;
-};
-
-try {
-	module.exports = m();
-} catch(e) {
-	define(m);
-}
-
-})();
+});

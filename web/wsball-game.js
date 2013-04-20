@@ -1,17 +1,5 @@
-(function() {
-var Vector;
-try {
-	module.exports = newGame;
-	Vector = require('./vector.js');
-} catch(e) {
-	define(['vector.js'],function(vector) {
-		Vector = vector;
-		return newGame;
-	});
-}
-
-function newGame() {
-
+define(['./vector','./linesegment'],function(Vector,LineSegment) {
+	return function newGame() {
 	function assert(b) { if(!b) {
 		debugger;
 		throw new Error('Assertion failed');
@@ -47,6 +35,41 @@ function newGame() {
 			ball: {x:300,y:300,vx:0,vy:0}
 		}
 	}];
+
+
+	function createBox(points) {
+		var lineSegments = [];
+		var prevPoint = points[points.length-1];
+		points.forEach(function(point) {
+			lineSegments.push(new LineSegment(prevPoint.x, prevPoint.y, point.x, point.y));
+			prevPoint = point;
+		});
+		return lineSegments;
+	}
+	var level = {
+		lines: createBox([
+			new Vector(50,50),
+			
+			new Vector(50,240),
+			new Vector(10,240),
+			new Vector(10,360),
+			new Vector(50,360),
+
+			new Vector(50,550),
+			new Vector(750,550),
+
+			new Vector(750,360),
+			new Vector(790,360),
+			new Vector(790,240),
+			new Vector(750,240),
+			
+			new Vector(750,50)
+		]),
+		teams: [
+			{ goals: [new LineSegment(40,240, 40,360)] },
+			{ goals: [new LineSegment(760,360, 760,240)] }
+		]
+	};
 
 	function getLastTimeFrame() {
 		return timeframes[0];
@@ -150,6 +173,7 @@ function newGame() {
 		});
 
 		var t = new Vector();
+		var t2 = new Vector();
 		var radius = 20.0;
 		var bounciness = 0;
 		var mass = 1;
@@ -158,9 +182,9 @@ function newGame() {
 		ng.players.forEach(function(pa) {
 			ng.players.forEach(function(pb) {
 				if (pa === pb) { return; }
-				handleCollision(pa,10,20,pb,10,20);
+				handleCircleCollision(pa,10,20,pb,10,20);
 			});
-			if (handleCollision(ng.ball,5,10,pa,10,20) && pa.keys['x']) {
+			if (handleCircleCollision(ng.ball,5,10,pa,10,20) && pa.keys['x']) {
 				t.set(ng.ball.x,ng.ball.y);
 				t.substract(pa.x,pa.y);
 				t.normalizeOrZero();
@@ -172,7 +196,7 @@ function newGame() {
 				delete pa.keys['x'];
 			}
 		});
-		function handleCollision(pa,massa,radiusa,pb,massb,radiusb) {
+		function handleCircleCollision(pa,massa,radiusa,pb,massb,radiusb) {
 			t.set(pa.x,pa.y);
 			t.substract(pb.x,pb.y);
 			var l = t.length();
@@ -191,6 +215,88 @@ function newGame() {
 				}
 			}
 			return false;
+		}
+
+		ng.players.forEach(function(p) {
+			handleLineCollision(p,20,0, level.lines);
+		});
+		handleLineCollision(ng.ball,10,0.5, level.lines);
+
+		function getCollisions(o,radius, lineSegments, collisions) {
+			for(var i=0;i<lineSegments.length;i++) {
+				var lineSegment = lineSegments[i];
+				if (lineSegment.normal.dot(o.vx,o.vy) > 0) {
+					continue;
+				}
+				t.setV(lineSegment.normal);
+				t.normalRight();
+				var l = lineSegment.start.distanceToV(lineSegment.end);
+				t2.set(o.x,o.y);
+				t2.substractV(lineSegment.start);
+				var offY = lineSegment.normal.dotV(t2)-radius;
+				var offX = t.dotV(t2);
+				if (offY < -radius*2) {
+					continue;
+				} else if (offY < 0) {
+					var d;
+					if (offX > 0 && offX < l) {
+						offY*=-1;
+						collisions.push({
+							lineSegment: lineSegment,
+							offset:offY
+						});
+					} else if (offX < 0 && offX > -radius) {
+						d = lineSegment.start.distanceTo(o.x,o.y);
+						if (d < radius) {
+							t.set(o.x,o.y);
+							t.substractV(lineSegment.start);
+							t.normalize();
+							collisions.push({
+								lineSegment: lineSegment,
+								offset:radius-d
+							});
+						}
+					} else if (offX > l && offX < l+radius) {
+						d = lineSegment.end.distanceTo(o.x,o.y);
+						if (d < radius) {
+							t.set(o.x,o.y);
+							t.substractV(lineSegment.end);
+							t.normalize();
+							collisions.push({
+								lineSegment: lineSegment,
+								offset:radius-d
+							});
+						}
+					}
+				} else {
+					continue;
+				}
+			}
+		}
+
+		function handleLineCollision(o,radius,bounciness, collisionlines) {
+ 			for(var iteration=0;iteration<5;iteration++) {
+				var collisions = [];
+				
+				getCollisions(o,radius,collisionlines,collisions);
+				if (collisions.length > 0) {
+					collisions.sort(function(a,b) {
+						return b.offset-a.offset;
+					});
+					var c = collisions[0];
+					//offset-=1;
+					t.set(o.x,o.y);
+					t.add(c.lineSegment.normal.x*c.offset,c.lineSegment.normal.y*c.offset);
+					o.x = t.x; o.y = t.y;
+					var vc = c.lineSegment.normal.dot(o.vx,o.vy);
+
+					t.set(o.vx,o.vy);
+					t.substract((1+bounciness)*c.lineSegment.normal.x*vc, (1+bounciness)*c.lineSegment.normal.y*vc);
+					o.vx = t.x; o.vy = t.y;
+				} else {
+					break;
+				}
+			}
 		}
 
 		return ng;
@@ -251,10 +357,11 @@ function newGame() {
 		updateGame: updateGame,
 		insertEvent: insertEvent,
 		resetToTimeFrames: resetToTimeFrames,
+		getLevel: function() { return level; },
 		isFramePrehistoric: function(frame) { return frame < timeframes[timeframes.length-1].gamestate.frame; },
 		getCurrentGameState: function() { return timeframes[0].gamestate; },
 		getCurrentFrame: function() { return timeframes[0].gamestate.frame; }
 	};
-}
 
-})();
+	}
+});

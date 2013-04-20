@@ -317,21 +317,27 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 				return Math.round(f*100)/100;
 			}
 
-			for(var i=1-1;i>=0;i--) {
+			var drawHistory = Math.min(100,timeframes.length);
+			for(var i=drawHistory-1;i>=0;i--) {
 				var timeframe = timeframes[i];
-				g.context.globalAlpha = 1-(i/timeframes.length);
+				g.context.globalAlpha = 1-(i/drawHistory);
 				timeframe.gamestate.players.forEach(function(player) {
 					var x = player.x;
 					var y = 600-player.y;
 					g.fillStyle('blue');
 					g.fillCircle(x,y,20);
 					g.fillStyle('white');
-					g.fillText('Player:'+round(player.x)+','+round(player.y),x,y);
+					//g.fillText('Player:'+round(player.x)+','+round(player.y),x,y);
 				});
 
 				g.fillStyle('white');
 				g.fillCircle(timeframe.gamestate.ball.x,600-timeframe.gamestate.ball.y,10);
 			}
+
+			game.getLevel().lines.forEach(function(line) {
+				g.strokeStyle('white');
+				g.strokeLine(line.start.x,line.start.y,line.end.x,line.end.y);
+			});
 
 
 			// Draw HUD
