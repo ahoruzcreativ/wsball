@@ -137,7 +137,7 @@ define(['./vector','./linesegment'],function(Vector,LineSegment) {
 		var ng = {
 			frame: og.frame+1,
 
-			scores: og.scores.splice(0),
+			scores: og.scores.slice(0),
 
 			players: og.players.map(function(player) {
 				return playerLookup[player.clientid] = {
