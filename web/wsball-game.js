@@ -76,8 +76,12 @@ define(['./vector','./linesegment'],function(Vector,LineSegment) {
 			new Vector(750,50)
 		]),
 		teams: [
-			{ goals: [new LineSegment(40,240, 40,360)] },
-			{ goals: [new LineSegment(760,360, 760,240)] }
+			{ goals: [new LineSegment(40,240, 40,360)],
+			  color: 'red'
+			},
+			{ goals: [new LineSegment(760,360, 760,240)],
+			  color: 'blue'
+			}
 		]
 	};
 
@@ -139,6 +143,7 @@ define(['./vector','./linesegment'],function(Vector,LineSegment) {
 				return playerLookup[player.clientid] = {
 					clientid: player.clientid,
 					keys: cloneObject(player.keys),
+					team: player.team,
 					x: player.x,
 					y: player.y,
 					vx: player.vx,
@@ -166,8 +171,10 @@ define(['./vector','./linesegment'],function(Vector,LineSegment) {
 					delete player.keys[event.key];
 				},
 				connect: function(ng,event) {
+					var balance = ng.players.reduce(function(last,curr) { return last + (curr.team === 0 ? 1 : -1); },0);
 					ng.players.push({
-						x: 500, y: 500,
+						team: balance > 0 ? 1 : 0,
+						x: 400, y: 300,
 						vx: 0, vy: 0,
 						keys: {},
 						clientid: event.clientid

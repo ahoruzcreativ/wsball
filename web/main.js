@@ -324,7 +324,7 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 				timeframe.gamestate.players.forEach(function(player) {
 					var x = player.x;
 					var y = 600-player.y;
-					g.fillStyle('blue');
+					g.fillStyle(game.getLevel().teams[player.team].color);
 					g.fillCircle(x,y,20);
 					g.fillStyle('white');
 					//g.fillText('Player:'+round(player.x)+','+round(player.y),x,y);
