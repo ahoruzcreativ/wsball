@@ -42,7 +42,7 @@ define(['./vector','./linesegment'],function(Vector,LineSegment) {
 			frame: 0,
 			scores: [0,0],
 			players: [],
-			ball: {x:300,y:300,vx:0,vy:0}
+			ball: {x:400,y:300,vx:0,vy:0}
 		}
 	}];
 
@@ -77,10 +77,10 @@ define(['./vector','./linesegment'],function(Vector,LineSegment) {
 		]),
 		teams: [
 			{ goals: [new LineSegment(40,240, 40,360)],
-			  color: 'red'
+			  color: '#ff2d2d'
 			},
 			{ goals: [new LineSegment(760,360, 760,240)],
-			  color: 'blue'
+			  color: '#376fff'
 			}
 		]
 	};
@@ -221,7 +221,7 @@ define(['./vector','./linesegment'],function(Vector,LineSegment) {
 		ng.players.forEach(function(player) {
 			function n(b){return b?1:0;}
 			var dirx = n(player.keys.right) - n(player.keys.left);
-			var diry = n(player.keys.up) - n(player.keys.down);
+			var diry = n(player.keys.down) - n(player.keys.up);
 			var len = Math.sqrt(dirx*dirx+diry*diry);
 			if (len > 0) {
 				dirx /= len;
@@ -252,7 +252,7 @@ define(['./vector','./linesegment'],function(Vector,LineSegment) {
 			if (handleCircleCollision(
 					ng.ball,constants.ball_mass,constants.ball_radius,
 					pa,constants.player_mass,constants.player_radius
-				) && pa.keys['x']) {
+				) && pa.keys['x'] === 1) {
 				t.set(ng.ball.x,ng.ball.y);
 				t.substract(pa.x,pa.y);
 				t.normalizeOrZero();
@@ -261,7 +261,7 @@ define(['./vector','./linesegment'],function(Vector,LineSegment) {
 				ng.ball.vx = t.x;
 				ng.ball.vy = t.y;
 
-				delete pa.keys['x'];
+				pa.keys['x'] = 2;
 			}
 		});
 		function handleCircleCollision(pa,massa,radiusa,pb,massb,radiusb) {
@@ -419,6 +419,7 @@ define(['./vector','./linesegment'],function(Vector,LineSegment) {
 	}
 
 	return {
+		constants: constants,
 		timeframes: timeframes,
 		futureEvents: futureEvents,
 		getLastTimeFrame: getLastTimeFrame,
