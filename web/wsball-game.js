@@ -108,12 +108,25 @@ define(['./vector','./linesegment'],function(Vector,LineSegment) {
 	function nextGameStateFromTimeFrame(timeframe) {
 		return nextGameState(timeframe.gamestate, timeframe.events);
 	}
-
+	var fieldpositions = [300,350,250,400,200];
+	function getPlayerIndex(gamestate,player) {
+		var index = 0;
+		var players = gamestate.players;
+		for(var i=0;i<players.length;i++) {
+			var p = players[i];
+			if (p === player) { return index; }
+			if (p.team === player.team) { index++; } 
+		}
+	}
+	function positionPlayer(gamestate,player) {
+		var nr = getPlayerIndex(gamestate,player);
+		player.x = 400 + 200*(player.team === 0 ? -1 : 1) + Math.floor(nr/fieldpositions.length)*50;
+		player.y = fieldpositions[nr%5];
+	}
 	function reset(gamestate) {
 		var gs = gamestate;
 		gs.players.forEach(function(player) {
-			player.x = 400;
-			player.y = 300;
+			positionPlayer(gs,player);
 			player.vx = 0;
 			player.vy = 0;
 		});
@@ -172,13 +185,15 @@ define(['./vector','./linesegment'],function(Vector,LineSegment) {
 				},
 				connect: function(ng,event) {
 					var balance = ng.players.reduce(function(last,curr) { return last + (curr.team === 0 ? 1 : -1); },0);
-					ng.players.push({
+					var newplayer = {
 						team: balance > 0 ? 1 : 0,
 						x: 400, y: 300,
 						vx: 0, vy: 0,
 						keys: {},
 						clientid: event.clientid
-					});
+					};
+					ng.players.push(newplayer);
+					positionPlayer(ng,newplayer);
 				},
 				disconnect: function(ng,event) {
 					var player = playerLookup[event.clientid];
