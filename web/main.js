@@ -317,7 +317,7 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 				return Math.round(f*100)/100;
 			}
 
-			var drawHistory = Math.min(100,timeframes.length);
+			var drawHistory = Math.min(1,timeframes.length);
 			for(var i=drawHistory-1;i>=0;i--) {
 				var timeframe = timeframes[i];
 				g.context.globalAlpha = 1-(i/drawHistory);
@@ -326,7 +326,13 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 					var y = 600-player.y;
 					g.fillStyle(game.getLevel().teams[player.team].color);
 					g.fillCircle(x,y,20);
-					g.fillStyle('white');
+
+					if (player.keys.x) {
+						g.strokeStyle('white');
+						g.lineWidth(3);
+						g.strokeCircle(x,y,20);
+						g.lineWidth(1);
+					}
 					//g.fillText('Player:'+round(player.x)+','+round(player.y),x,y);
 				});
 
