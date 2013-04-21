@@ -340,8 +340,8 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 				g.strokeStyle('rgba(255,255,255,0.5)');
 				g.lineWidth(5);
 				ctx.beginPath();
-				ctx.moveTo(level.lines[0].start.x,level.lines[0].start.y);
-				level.lines.forEach(function(line) {
+				ctx.moveTo(level.ballcollision[0].start.x,level.ballcollision[0].start.y);
+				level.ballcollision.forEach(function(line) {
 
 					// HACK: Do not draw collision of goals
 					if (line.start.x <= 10 || line.end.x <= 10) { return; }

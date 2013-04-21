@@ -57,7 +57,7 @@ define(['./vector','./linesegment'],function(Vector,LineSegment) {
 		return lineSegments;
 	}
 	var level = {
-		lines: createBox([
+		ballcollision: createBox([
 			new Vector(50,50),
 			
 			new Vector(50,240),
@@ -74,6 +74,32 @@ define(['./vector','./linesegment'],function(Vector,LineSegment) {
 			new Vector(750,240),
 			
 			new Vector(750,50)
+		]),
+		playercollision: createBox([
+			new Vector(0,0),
+			
+			new Vector(0,235),
+			new Vector(50,235),
+			new Vector(50,240),
+			new Vector(10,240),
+			new Vector(10,360),
+			new Vector(50,360),
+			new Vector(50,365),
+			new Vector(0,365),
+
+			new Vector(0,600),
+			new Vector(800,600),
+
+			new Vector(800,365),
+			new Vector(750,365),
+			new Vector(750,360),
+			new Vector(790,360),
+			new Vector(790,240),
+			new Vector(750,240),
+			new Vector(750,235),
+			new Vector(800,235),
+
+			new Vector(800,0)
 		]),
 		teams: [
 			{ goals: [new LineSegment(40,240, 40,360)],
@@ -300,9 +326,9 @@ define(['./vector','./linesegment'],function(Vector,LineSegment) {
 		}
 
 		ng.players.forEach(function(p) {
-			handleLineCollision(p,constants.player_radius,constants.player_bounciness, level.lines);
+			handleLineCollision(p,constants.player_radius,constants.player_bounciness, level.playercollision);
 		});
-		handleLineCollision(ng.ball,constants.ball_radius,constants.ball_bounciness, level.lines);
+		handleLineCollision(ng.ball,constants.ball_radius,constants.ball_bounciness, level.ballcollision);
 
 		function getCollisions(o,radius, lineSegments, collisions) {
 			for(var i=0;i<lineSegments.length;i++) {
