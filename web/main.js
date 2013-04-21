@@ -462,6 +462,22 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 			drawGoal(game.getLevel().teams[1].color);
 			g.context.restore();
 
+			drawBigText(getLastTimeFrame().gamestate.scores[0].toString(), white, 300,42);
+			drawBigText('-', white, 400,42);
+			drawBigText(getLastTimeFrame().gamestate.scores[1].toString(), white, 500,42);
+
+			function drawBigText(text,color,x,y) {
+				g.context.font = 'bold 42pt arial';
+				g.fillStyle('#111');
+				g.fillCenteredText(text, x+3,y+3);
+				g.fillStyle(color);
+				g.context.shadowBlur=10;
+				g.context.shadowColor='#111';
+				g.fillCenteredText(text, x,y);
+				g.context.font = '12px arial';
+				g.context.shadowBlur=0;
+			}
+
 			// Draw HUD
 			g.fillStyle('white');
 			g.fillText('Frame:  '+getLastTimeFrame().gamestate.frame,100,100);
