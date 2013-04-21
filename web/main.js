@@ -140,6 +140,18 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 		var syninterval = undefined;
 
 		var requestingReset = false;
+		var playernames = {};
+		var playernameInput = document.createElement('input');
+		playernameInput.onchange = function() { setName(playernameInput.value); };
+		document.body.appendChild(playernameInput);
+
+		function setName(name) {
+			playernames[clientid] = name;
+			send({
+				type: 'setname',
+				name: name
+			});
+		}
 
 		function getPlayer() {
 			return getLastTimeFrame().gamestate.players.filter(function(player) {
@@ -249,6 +261,9 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 					var newLatencySolving = toMs(framesDifference)/latencySolvingFrames;
 					latencySolving = latencySolving*0.5+newLatencySolving*0.5;
 					latencyMs = toMs(now-msg.oframe);
+				},
+				setname: function(msg) {
+					playernames[msg.clientid] = msg.name;
 				},
 				connect: function(msg) {
 					game.insertEvent(msg.frame,{
@@ -400,6 +415,12 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 					g.lineWidth(playerBorderWidth);
 					g.strokeCircle(x,y,game.constants.player_radius - playerBorderWidth*0.5);
 					g.lineWidth(1);
+
+					var playername = playernames[player.clientid];
+					if (playername) {
+						g.fillStyle(white);
+						g.fillCenteredText(playername,x,y);
+					}
 					//g.fillText('Player:'+round(player.x)+','+round(player.y),x,y);
 				});
 

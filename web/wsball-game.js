@@ -77,7 +77,7 @@ define(['./vector','./linesegment'],function(Vector,LineSegment) {
 		]),
 		playercollision: createBox([
 			new Vector(0,0),
-			
+
 			new Vector(0,235),
 			new Vector(50,235),
 			new Vector(50,240),
@@ -302,7 +302,6 @@ define(['./vector','./linesegment'],function(Vector,LineSegment) {
 
 				// Reposition
 				var penetrationLength = radiusa+radiusb-l;
-				console.log(t,massa,massb,totalmass);
 				pa.x += penetrationLength*t.x*(massb/totalmass);
 				pa.y += penetrationLength*t.y*(massb/totalmass);
 

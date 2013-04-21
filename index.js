@@ -63,6 +63,16 @@ app.ws.usepath('/client',function(req,next) {
 			clientid: client.id,
 			timeframe: getLastTimeFrame()
 		});
+
+		clients.forEach(function(other) {
+			if (other === client) { return; }
+			if (!other.name) { return; }
+			client.send({
+				type: 'setname',
+				clientid: other.id,
+				name: other.name
+			});
+		});
 	})();
 
 	function sendToOthers(msg) {
@@ -117,6 +127,22 @@ app.ws.usepath('/client',function(req,next) {
 			},
 			ack: function(msg) {
 				client.latency = msg.latency;
+			},
+			setname: function(msg) {
+				if (/^[a-zA-Z0-9_\-\.]{1,5}$/.test(msg.name)) {
+					client.name = msg.name;
+					sendToOthers({
+						type: msg.type,
+						clientid: client.id,
+						name: msg.name
+					});
+				} else {
+					client.send({
+						type:'setname',
+						clientid:client.id,
+						name:client.name
+					});
+				}
 			},
 			resetrequest: function(msg) {
 				sendReset();
