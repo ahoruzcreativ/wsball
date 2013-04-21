@@ -207,7 +207,9 @@ define(['./vector','./linesegment'],function(Vector,LineSegment) {
 			var collisions = [];
 			getCollisions(ng.ball,constants.ball_radius,team.goals,collisions);
 			if (collisions.length > 0) {
-				ng.scores[i]++;
+				for(var si=0;si<ng.scores.length;si++) {
+					if (si !== i) { ng.scores[i]++; }
+				}
 				reset(ng);
 			}
 		}
@@ -269,16 +271,28 @@ define(['./vector','./linesegment'],function(Vector,LineSegment) {
 			t.substract(pb.x,pb.y);
 			var l = t.length();
 			if (l < radiusa+radiusb) {
+				var totalmass = massa+massb;
 				t.normalizeOrZero();
+
+				// Reposition
+				var penetrationLength = radiusa+radiusb-l;
+				console.log(t,massa,massb,totalmass);
+				pa.x += penetrationLength*t.x*(massb/totalmass);
+				pa.y += penetrationLength*t.y*(massb/totalmass);
+
+				pb.x -= penetrationLength*t.x*(massa/totalmass);
+				pb.y -= penetrationLength*t.y*(massa/totalmass);
+
+				// Bounce
 				var d = t.dot(pa.vx-pb.vx,pa.vy-pb.vy);
 				if (d < 0) {
 					t.multiply(d * (1 + bounciness));
-					var totalmass = massa+massb;
 					pa.vx -= t.x*(massb/totalmass);
 					pa.vy -= t.y*(massb/totalmass);
 
 					pb.vx += t.x*(massa/totalmass);
 					pb.vy += t.y*(massa/totalmass);
+
 					return true;
 				}
 			}
