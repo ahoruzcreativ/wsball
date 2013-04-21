@@ -252,7 +252,7 @@ define(['./vector','./linesegment'],function(Vector,LineSegment) {
 			if (handleCircleCollision(
 					ng.ball,constants.ball_mass,constants.ball_radius,
 					pa,constants.player_mass,constants.player_radius
-				) && pa.keys['x'] === 1) {
+				) && pa.keys['x']) {
 				t.set(ng.ball.x,ng.ball.y);
 				t.substract(pa.x,pa.y);
 				t.normalizeOrZero();
@@ -261,7 +261,7 @@ define(['./vector','./linesegment'],function(Vector,LineSegment) {
 				ng.ball.vx = t.x;
 				ng.ball.vy = t.y;
 
-				pa.keys['x'] = 2;
+				delete pa.keys['x'];
 			}
 		});
 		function handleCircleCollision(pa,massa,radiusa,pb,massb,radiusb) {
