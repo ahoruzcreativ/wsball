@@ -234,7 +234,7 @@ define(['./vector','./linesegment'],function(Vector,LineSegment) {
 			getCollisions(ng.ball,constants.ball_radius,team.goals,collisions);
 			if (collisions.length > 0) {
 				for(var si=0;si<ng.scores.length;si++) {
-					if (si !== i) { ng.scores[i]++; }
+					if (si !== i) { ng.scores[si]++; }
 				}
 				reset(ng);
 			}
