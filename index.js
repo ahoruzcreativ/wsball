@@ -4,8 +4,7 @@ var requirejs = require('requirejs');
 requirejs.config({
 	nodeRequire: require
 });
-requirejs(['./web/wsball-game'],function(wsball_game) {
-
+requirejs(['./web/simulator','./web/wsball-game'],function(Simulator,game) {
 //require('sugar');
 Array.prototype.contains = function(e) { return this.indexOf(e) >= 0; }
 Array.prototype.remove = function(e) {
@@ -20,13 +19,13 @@ var clients = [];
 var newid = 1;
 app.use(express.static('web'));
 
-var game = wsball_game();
-var timeframes = game.timeframes;
-var getLastTimeFrame = game.getLastTimeFrame;
-var updateGame = game.updateGame;
-var insertEvent = game.insertEvent;
+var simulator = new Simulator(game);
+var timeframes = simulator.timeframes;
+var getLastTimeFrame = simulator.getLastTimeFrame.bind(simulator);
+var updateGame = simulator.updateGame.bind(simulator);
+var insertEvent = simulator.insertEvent.bind(simulator);
 
-function getLastFrame() { return timeframes[0].gamestate.frame; }
+function getLastFrame() { return simulator.getLastTimeFrame().gamestate.frame; }
 
 
 app.ws.usepath('/client',function(req,next) {
@@ -174,7 +173,7 @@ function update() {
 	var tf = getLastTimeFrame();
 	process.stdout.write('\r' + [
 		'@'+tf.gamestate.frame,
-		'!'+game.futureEvents.length,
+		'!'+simulator.futureEvents.length,
 		'|'+timeframes.length,
 		':'+tf.gamestate.players.length,
 		'*'+tf.events.length,

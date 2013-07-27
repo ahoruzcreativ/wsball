@@ -1,4 +1,4 @@
-define(['platform','game','vector','staticcollidable','linesegment','editor','required','state','level','mouse','collision','keyboard','quake','resources','wsball-game'],function(platform,Game,Vector,StaticCollidable,LineSegment,editor,required,state,level,mouse,collision,keyboard,quake,resources,newGame) {
+define(['platform','game','vector','staticcollidable','linesegment','editor','required','state','level','mouse','collision','keyboard','quake','resources','simulator','wsball-game'],function(platform,Game,Vector,StaticCollidable,LineSegment,editor,required,state,level,mouse,collision,keyboard,quake,resources,Simulator,game) {
 	var t = new Vector(0,0);
 	var t2 = new Vector(0,0);
 	var rs = {
@@ -6,10 +6,10 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 		'audio': []
 	};
 
-	var g,game;
+	var g;
 	platform.once('load',function() {
 		var canvas = document.getElementById('main');
-		game = g = new Game(startGame, canvas, [required(['chrome']),mouse,keyboard,resources(rs),state,level,collision,quake]);
+		g = new Game(startGame, canvas, [required(['chrome']),mouse,keyboard,resources(rs),state,level,collision,quake]);
 		g.resources.status.on('changed',function() {
 			g.graphics.context.clearRect(0,0,800,600);
 			g.graphics.context.fillStyle = 'black';
@@ -100,7 +100,7 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 
 			var ws = new WebSocket(new_uri, 'game');
 			ws.onopen = function() {
-				game.changeState(gameplayState(ws));
+				g.changeState(gameplayState(ws));
 			};
 			ws.onclose = function() {
 				safeRefresh();
@@ -122,11 +122,10 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 			enable: enable,
 			disable: disable
 		};
-
-		var game = newGame();
-		var timeframes = game.timeframes;
-		var getLastTimeFrame = game.getLastTimeFrame;
-		var updateGame = game.updateGame;
+		var simulator = new Simulator(game);
+		var timeframes = simulator.timeframes;
+		var getLastTimeFrame = simulator.getLastTimeFrame.bind(simulator);
+		var updateGame = simulator.updateGame.bind(simulator);
 		var clientid = undefined;
 
 		var gameupdateTimeout = undefined;
@@ -223,7 +222,7 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 			var msg = JSON.parse(event.data);
 			console.log(msg);
 
-			if (msg.frame && game.isFramePrehistoric(msg.frame)) {
+			if (msg.frame && simulator.isFramePrehistoric(msg.frame)) {
 				requestingReset = true;
 				send({
 					type: 'resetrequest'
@@ -241,7 +240,7 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 				},
 				reset: function(msg) {
 					requestingReset = false;
-					game.resetToTimeFrames(msg.timeframes);
+					simulator.resetToTimeFrames(msg.timeframes);
 					console.log('RESET to ',msg.timeframes[0].gamestate.frame);
 					clearTimeout(gameupdateTimeout);
 					update();
@@ -266,26 +265,26 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 					playernames[msg.clientid] = msg.name;
 				},
 				connect: function(msg) {
-					game.insertEvent(msg.frame,{
+					simulator.insertEvent(msg.frame,{
 						type: 'connect',
 						clientid: msg.clientid
 					});
 				},
 				disconnect: function(msg) {
-					game.insertEvent(msg.frame,{
+					simulator.insertEvent(msg.frame,{
 						type: 'disconnect',
 						clientid: msg.clientid
 					});
 				},
 				up: function(msg) {
-					game.insertEvent(msg.frame,{
+					simulator.insertEvent(msg.frame,{
 						type: 'up',
 						clientid: msg.clientid,
 						key: msg.key
 					});
 				},
 				down: function(msg) {
-					game.insertEvent(msg.frame,{
+					simulator.insertEvent(msg.frame,{
 						type: 'down',
 						clientid: msg.clientid,
 						key: msg.key
@@ -350,7 +349,7 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 
 			// Draw lines
 			(function() {
-				var level = game.getLevel();
+				var level = game.level;
 				var ctx = g.context;
 				g.strokeStyle('rgba(255,255,255,0.5)');
 				g.lineWidth(5);
@@ -405,7 +404,7 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 					var x = player.x;
 					var y = player.y;
 
-					g.fillStyle(game.getLevel().teams[player.team].color);
+					g.fillStyle(game.level.teams[player.team].color);
 					g.fillCircle(x,y,game.constants.player_radius);
 
 					g.strokeStyle(player.keys.x
@@ -476,11 +475,11 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 				ctx.lineCap = 'butt';
 			}
 			g.context.save();
-			drawGoal(game.getLevel().teams[0].color);
+			drawGoal(game.level.teams[0].color);
 			g.context.translate(400,300);
 			g.context.scale(-1,1);
 			g.context.translate(-400,-300);
-			drawGoal(game.getLevel().teams[1].color);
+			drawGoal(game.level.teams[1].color);
 			g.context.restore();
 
 			drawBigText(getLastTimeFrame().gamestate.scores[0].toString(), white, 300,42);
