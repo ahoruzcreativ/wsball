@@ -302,7 +302,7 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 
 		function keyEvent(event) {
 			var timeframe = getLastTimeFrame();
-			timeframe.events.push(Object.merge({
+			simulator.pushEvent(Object.merge({
 				clientid: clientid
 			},event));
 			send(Object.merge({

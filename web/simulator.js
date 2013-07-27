@@ -11,6 +11,7 @@ define([],function() {
 		return -1;
 	}
 
+	/** @constructor */
 	function Simulator(game) {
 		this.futureEvents = [];
 		this.timeframes = [{
@@ -20,9 +21,6 @@ define([],function() {
 		this.game = game;
 	}
 	(function(p) {
-		p.getLastTimeFrame = function() {
-			return this.timeframes[0];
-		};
 		p.getTimeFrame = function(frame) {
 			var frameIndex = this.timeframes[0].gamestate.frame - frame;
 			assert(frameIndex >= 0, 'The frame '+frame+' was newer than the last frame '+this.timeframes[0].gamestate.frame);
@@ -54,13 +52,17 @@ define([],function() {
 			// Place (previously) future events in the new timeframe if they were destined to be in that frame.
 			while (this.futureEvents.length > 0 && newgamestate.frame === this.futureEvents[0].frame) {
 				var futureEvent = this.futureEvents.shift();
-				this.timeframes[0].events.push(futureEvent.event);
+
+				addSorted(this.timeframes[0].events,futureEvent.event,this.game.compareEvents);
 			}
 
 			// Remove old timeframes
 			while (this.timeframes.length > 15) {
 				this.timeframes.pop();
 			}
+		};
+		p.pushEvent = function(event) {
+			this.insertEvent(this.getCurrentFrame(),event);
 		};
 		p.insertEvent = function(frame,event) {
 			var frameIndex = this.getLastTimeFrame().gamestate.frame - frame;
@@ -75,7 +77,7 @@ define([],function() {
 				});
 			} else if (frameIndex < this.timeframes.length) { // Event of current frame or the past?
 				var timeframe = this.getTimeFrame(frame);
-				timeframe.events.push(event);
+				addSorted(timeframe.events,event,this.game.compareEvents);
 				this.recalculateGameStates(frame);
 			} else {
 				throw new Error('The inserted frame is prehistoric: it is too old to simulate');
@@ -95,6 +97,14 @@ define([],function() {
 		p.getCurrentFrame = function() {
 			return this.timeframes[0].gamestate.frame;
 		};
+		p.getLastTimeFrame = function() {
+			return this.timeframes[0];
+		};
+		function addSorted(arr,item,compare) {
+			var i;
+			for(i=0;i<arr.length && compare(item,arr[i])>0;i++) { }
+			arr.splice(i,0,item);
+		}
 	})(Simulator.prototype);
 
 	return Simulator;

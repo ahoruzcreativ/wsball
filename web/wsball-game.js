@@ -374,10 +374,25 @@ define(['./vector','./linesegment'],function(Vector,LineSegment) {
 
 		return ng;
 	}
+
+	function compare(va,vb) {
+		if (va === undefined) {
+			if (vb === undefined) { return 0; }
+			return 1;
+		} else if (vb === undefined) {
+			return -1;
+		}
+		return (va > vb) ? 1 : (vb > va ? -1 : 0);
+	}
+	function compareEvents(ea,eb) {
+		return compare(ea.type,eb.type) || compare(ea.clientid,eb.clientid) || compare(ea.key,eb.key) || compare(ea.name,eb.name);
+	}
+
 	return {
 		init: initGame,
 		update: updateGame,
 		level: level,
-		constants: constants
+		constants: constants,
+		compareEvents: compareEvents
 	};
 });
