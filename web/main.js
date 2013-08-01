@@ -1,4 +1,8 @@
-define(['platform','game','vector','staticcollidable','linesegment','editor','required','state','level','mouse','collision','keyboard','quake','resources','simulator','wsball-game'],function(platform,Game,Vector,StaticCollidable,LineSegment,editor,required,state,level,mouse,collision,keyboard,quake,resources,Simulator,game) {
+define(['platform','game','vector','staticcollidable','linesegment','editor','required','state','level','mouse','collision','keyboard','quake','resources',
+		'simulator','wsball-game','jsonwebsocketmessenger'
+	],function(platform,Game,Vector,StaticCollidable,LineSegment,editor,required,state,level,mouse,collision,keyboard,quake,resources,
+		Simulator,game,JsonWebsocketMessenger
+	) {
 	var t = new Vector(0,0);
 	var t2 = new Vector(0,0);
 	var rs = {
@@ -122,6 +126,7 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 			enable: enable,
 			disable: disable
 		};
+		var messenger = new JsonWebsocketMessenger(ws);
 		var simulator = new Simulator(game);
 		var timeframes = simulator.timeframes;
 		var getLastTimeFrame = simulator.getLastTimeFrame.bind(simulator);
@@ -169,57 +174,11 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 			updateGame();
 		}
 
-		var simulateLatency = false;
-		var simulateLatencyBase = 100;
-		var simulateLatencyUnstability = 50;
-		var simulateLatencySpikeAmount = 500;
-		var simulateLatencySpikeOccurance = 0.01;
+		var send = function(msg) {
+			messenger.send(msg);
+		};
 
-		function latency() {
-			return simulateLatencyBase
-				+  (Math.random()*simulateLatencyUnstability-simulateLatencyUnstability*0.5)
-				+  (Math.random() < simulateLatencySpikeOccurance ? simulateLatencySpikeAmount : 0);
-		}
-
-		function latencySimulator(cb) {
-			var timeout = null;
-			var queue = [];
-
-			function push(/*...*/) {
-				if (!simulateLatency) {
-					return cb.apply(null,arguments);
-				}
-				queue.push({
-					trigger: Date.now() + latency(),
-					args: arguments
-				});
-				waitForDequeue();
-			}
-
-			function waitForDequeue() {
-				if (queue.length > 0 && !timeout) {
-					timeout = setTimeout(dequeue,queue[0].trigger - Date.now());
-				}
-			}
-
-			function dequeue() {
-				var now = Date.now();
-				while (queue.length > 0 && queue[0].trigger <= now) {
-					cb.apply(null,queue.shift().args);
-				}
-				timeout = null;
-				waitForDequeue();
-			}
-
-			return push;
-		}
-
-		var send = latencySimulator(function(msg) {
-			ws.send(JSON.stringify(msg));
-		});
-
-		ws.onmessage = latencySimulator(function(event) {
-			var msg = JSON.parse(event.data);
+		messenger.onmessage = function(msg) {
 			console.log(msg);
 
 			if (msg.frame && simulator.isFramePrehistoric(msg.frame)) {
@@ -291,7 +250,7 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 					});
 				}
 			}[msg.type] || consolelog)(msg);
-		});
+		};
 
 		function synchronizeTime() {
 			send({
