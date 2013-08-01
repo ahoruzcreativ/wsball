@@ -129,16 +129,7 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 		var messenger = new JsonWebsocketMessenger(ws);
 		var simulator = new Simulator(game);
 		var networkClient = new NetworkClient(messenger,simulator);
-		var timeframes = simulator.timeframes;
-		var getLastTimeFrame = simulator.getLastTimeFrame.bind(simulator);
 
-		var latencyMs = 0;
-		var latencySolving = 0;
-		var latencySolvingFrames = 0;
-
-		var syninterval = undefined;
-
-		var requestingReset = false;
 		var playernames = {};
 		var playernameInput = document.createElement('input');
 		playernameInput.onchange = function() { setName(playernameInput.value); };
@@ -147,29 +138,18 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 		networkClient.onclose = safeRefresh;
 
 		function setName(name) {
-			playernames[clientid] = name;
-			send({
+			playernames[networkClient.clientid] = name;
+			messenger.send({
 				type: 'setname',
 				name: name
 			});
 		}
 
 		function getPlayer() {
-			return getLastTimeFrame().gamestate.players.filter(function(player) {
+			return simulator.getLastTimeFrame().gamestate.players.filter(function(player) {
 				return player.clientid === networkClient.clientid
 			})[0];
 		}
-
-		// function update() {
-		// 	if (latencySolvingFrames > 0) {
-		// 		latencySolvingFrames--;
-		// 		if (latencySolvingFrames === 0) {
-		// 			latencySolving = 0;
-		// 		}
-		// 	}
-		// 	gameupdateTimeout = setTimeout(update,defaultgamerate+latencySolving);
-		// 	updateGame();
-		// }
 
 		// Hook game-specific message handlers.
 		(function(h) {
@@ -212,6 +192,20 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 			messenger.send(Object.merge({
 				frame: timeframe.gamestate.frame
 			},event));
+		}
+		function keydown(key) {
+			inputEvent({
+				type: 'down',
+				key: key
+			});
+		}
+		function keyup(key) {
+			inputEvent({
+				type: 'up',
+				key: key
+			});
+		}
+		function mousedown(button) {
 		}
 
 		function enable() {
@@ -289,9 +283,9 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 				g.fillCircle(x,y,r+shadowWidth);
 			}
 
-			var drawHistory = Math.min(1,timeframes.length);
+			var drawHistory = Math.min(1,simulator.timeframes.length);
 			for(var i=drawHistory-1;i>=0;i--) {
-				var timeframe = timeframes[i];
+				var timeframe = simulator.timeframes[i];
 				g.context.globalAlpha = 1-(i/drawHistory);
 
 				var ball = timeframe.gamestate.ball;
@@ -386,9 +380,11 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 			drawGoal(game.level.teams[1].color);
 			g.context.restore();
 
-			drawBigText(getLastTimeFrame().gamestate.scores[0].toString(), white, 300,42);
+			var gamestate = simulator.getLastTimeFrame().gamestate;
+
+			drawBigText(gamestate.scores[0].toString(), white, 300,42);
 			drawBigText('-', white, 400,42);
-			drawBigText(getLastTimeFrame().gamestate.scores[1].toString(), white, 500,42);
+			drawBigText(gamestate.scores[1].toString(), white, 500,42);
 
 			function drawBigText(text,color,x,y) {
 				g.context.font = 'bold 42pt arial';
@@ -404,26 +400,12 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 
 			// Draw HUD
 			g.fillStyle('white');
-			g.fillText('Frame:  '+getLastTimeFrame().gamestate.frame,100,100);
-			g.fillText('latencySolving: '+round(latencySolving),100,110);
-			g.fillText('Latency: '+round(latencyMs),100,120);
-			g.fillText('Scores: '+getLastTimeFrame().gamestate.scores[0] + ' - ' + getLastTimeFrame().gamestate.scores[1],100,130);
+			g.fillText('Frame:  '+gamestate.frame,100,100);
+			g.fillText('latencySolving: '+round(networkClient.latencySolving),100,110);
+			g.fillText('Latency: '+round(networkClient.latencyMs),100,120);
+			g.fillText('Scores: '+gamestate.scores[0] + ' - ' + gamestate.scores[1],100,130);
 
 			next(g);
-		}
-		function keydown(key) {
-			inputEvent({
-				type: 'down',
-				key: key
-			});
-		}
-		function keyup(key) {
-			inputEvent({
-				type: 'up',
-				key: key
-			});
-		}
-		function mousedown(button) {
 		}
 		return me;
 	}
