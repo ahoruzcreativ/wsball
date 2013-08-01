@@ -36,8 +36,7 @@ app.ws.usepath('/client',function(req,next) {
 	var client = {
 		id: newid++,
 		messenger: messenger,
-		lastframe: getLastFrame(),
-		send : function() { try { throw new Error("Unsupported!"); } catch(e) { console.log(e.stack); } ; }
+		lastframe: getLastFrame()
 	};
 
 	clients.push(client);
