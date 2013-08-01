@@ -4,7 +4,7 @@ var requirejs = require('requirejs');
 requirejs.config({
 	nodeRequire: require
 });
-requirejs(['./web/simulator','./web/wsball-game'],function(Simulator,game) {
+requirejs(['./web/simulator','./web/wsball-game','./web/jsonwebsocketmessenger'],function(Simulator,game,JsonWebsocketMessenger) {
 //require('sugar');
 Array.prototype.contains = function(e) { return this.indexOf(e) >= 0; }
 Array.prototype.remove = function(e) {
@@ -32,15 +32,12 @@ app.ws.usepath('/client',function(req,next) {
 	if (!req.requestedProtocols.contains('game')) { console.log('Rejected'); return req.reject(); }
 	console.log('connected');
 	var ws = req.accept('game',req.origin);
+	var messenger = new JsonWebsocketMessenger(ws);
 	var client = {
 		id: newid++,
-		ws: ws,
+		messenger: messenger,
 		lastframe: getLastFrame(),
-		send: function(msg) {
-			if (this.ws.connected) {
-				this.ws.send(JSON.stringify(msg));
-			}
-		}
+		send : function() { try { throw new Error("Unsupported!"); } catch(e) { console.log(e.stack); } ; }
 	};
 
 	clients.push(client);
@@ -57,7 +54,7 @@ app.ws.usepath('/client',function(req,next) {
 			frame: timeframe.gamestate.frame
 		});
 
-		client.send({
+		client.messenger.send({
 			type: 'initialize',
 			clientid: client.id,
 			timeframe: getLastTimeFrame()
@@ -66,7 +63,7 @@ app.ws.usepath('/client',function(req,next) {
 		clients.forEach(function(other) {
 			if (other === client) { return; }
 			if (!other.name) { return; }
-			client.send({
+			client.messenger.send({
 				type: 'setname',
 				clientid: other.id,
 				name: other.name
@@ -77,7 +74,7 @@ app.ws.usepath('/client',function(req,next) {
 	function sendToOthers(msg) {
 		clients.forEach(function(other) {
 			if (other === client) { return; }
-			other.send(msg);
+			other.messenger.send(msg);
 		});
 	}
 
@@ -89,7 +86,8 @@ app.ws.usepath('/client',function(req,next) {
 		}
 
 		function sendReset() {
-			client.send({
+			console.log('RESET');
+			client.messenger.send({
 				type: 'reset',
 				timeframes: timeframes
 			});
@@ -117,7 +115,7 @@ app.ws.usepath('/client',function(req,next) {
 			down: keyEvent,
 			up: keyEvent,
 			syn: function(msg) {
-				client.send({
+				client.messenger.send({
 					type: 'ack',
 					oframe: msg.frame,
 					nframe: getLastFrame()
@@ -136,7 +134,7 @@ app.ws.usepath('/client',function(req,next) {
 						name: msg.name
 					});
 				} else {
-					client.send({
+					client.messenger.send({
 						type:'setname',
 						clientid:client.id,
 						name:client.name
@@ -194,7 +192,7 @@ function update() {
 	clients.forEach(function(client) {
 		if (curframe - client.lastsyn < 30) { return; }
 		client.lastsyn = curframe;
-		client.send({
+		client.messenger.send({
 			type: 'syn',
 			frame: curframe
 		});
