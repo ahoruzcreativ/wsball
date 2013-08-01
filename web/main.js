@@ -6,7 +6,7 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 	var t = new Vector(0,0);
 	var t2 = new Vector(0,0);
 	var rs = {
-		'images': ['test','mouse','moneybag','car','safe_open','safe_closed','player_head','player_body','player_dead','player_body_strangle','player_body_drag','player_shoe','floor','wall100','wall200','wall300','wall600'],
+		'images': [],
 		'audio': []
 	};
 
