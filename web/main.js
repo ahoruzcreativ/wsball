@@ -1,7 +1,7 @@
 define(['platform','game','vector','staticcollidable','linesegment','editor','required','state','level','mouse','collision','keyboard','quake','resources',
-		'simulator','wsball-game','jsonwebsocketmessenger'
+		'simulator','wsball-game','jsonwebsocketmessenger','network-client'
 	],function(platform,Game,Vector,StaticCollidable,LineSegment,editor,required,state,level,mouse,collision,keyboard,quake,resources,
-		Simulator,game,JsonWebsocketMessenger
+		Simulator,game,JsonWebsocketMessenger,NetworkClient
 	) {
 	var t = new Vector(0,0);
 	var t2 = new Vector(0,0);
@@ -128,15 +128,10 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 		};
 		var messenger = new JsonWebsocketMessenger(ws);
 		var simulator = new Simulator(game);
+		var networkClient = new NetworkClient(messenger,simulator);
 		var timeframes = simulator.timeframes;
 		var getLastTimeFrame = simulator.getLastTimeFrame.bind(simulator);
-		var updateGame = simulator.updateGame.bind(simulator);
-		var clientid = undefined;
 
-		var gameupdateTimeout = undefined;
-		var defaultgamerate = 1000*(1/30);
-		var gamerate = defaultgamerate;
-		
 		var latencyMs = 0;
 		var latencySolving = 0;
 		var latencySolvingFrames = 0;
@@ -149,6 +144,8 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 		playernameInput.onchange = function() { setName(playernameInput.value); };
 		document.body.appendChild(playernameInput);
 
+		networkClient.onclose = safeRefresh;
+
 		function setName(name) {
 			playernames[clientid] = name;
 			send({
@@ -159,112 +156,60 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 
 		function getPlayer() {
 			return getLastTimeFrame().gamestate.players.filter(function(player) {
-				return player.clientid === clientid
+				return player.clientid === networkClient.clientid
 			})[0];
 		}
 
-		function update() {
-			if (latencySolvingFrames > 0) {
-				latencySolvingFrames--;
-				if (latencySolvingFrames === 0) {
-					latencySolving = 0;
-				}
-			}
-			gameupdateTimeout = setTimeout(update,defaultgamerate+latencySolving);
-			updateGame();
-		}
+		// function update() {
+		// 	if (latencySolvingFrames > 0) {
+		// 		latencySolvingFrames--;
+		// 		if (latencySolvingFrames === 0) {
+		// 			latencySolving = 0;
+		// 		}
+		// 	}
+		// 	gameupdateTimeout = setTimeout(update,defaultgamerate+latencySolving);
+		// 	updateGame();
+		// }
 
-		var send = function(msg) {
-			messenger.send(msg);
-		};
-
-		messenger.onmessage = function(msg) {
-			console.log(msg);
-
-			if (msg.frame && simulator.isFramePrehistoric(msg.frame)) {
-				requestingReset = true;
-				send({
-					type: 'resetrequest'
+		// Hook game-specific message handlers.
+		(function(h) {
+			h['setname'] = function(msg) {
+				playernames[msg.clientid] = msg.name;
+			};
+			h['connect'] = function(msg) {
+				simulator.insertEvent(msg.frame,{
+					type: 'connect',
+					clientid: msg.clientid
 				});
-				return;
-			}
+			};
+			h['disconnect'] = function(msg) {
+				simulator.insertEvent(msg.frame,{
+					type: 'disconnect',
+					clientid: msg.clientid
+				});
+			};
+			h['up'] = function(msg) {
+				simulator.insertEvent(msg.frame,{
+					type: 'up',
+					clientid: msg.clientid,
+					key: msg.key
+				});
+			};
+			h['down'] = function(msg) {
+				simulator.insertEvent(msg.frame,{
+					type: 'down',
+					clientid: msg.clientid,
+					key: msg.key
+				});
+			};
+		})(networkClient.messageHandlers);
 
-			({
-				initialize: function(msg) {
-					clientid = msg.clientid;
-					timeframes.splice(0,timeframes.length,msg.timeframe);
-					update();
-
-					syninterval = setInterval(synchronizeTime,1000);
-				},
-				reset: function(msg) {
-					requestingReset = false;
-					simulator.resetToTimeFrames(msg.timeframes);
-					console.log('RESET to ',msg.timeframes[0].gamestate.frame);
-					clearTimeout(gameupdateTimeout);
-					update();
-				},
-				ack: function(msg) {
-					function toMs(frames) {
-						return frames*(1000/30);
-					}
-					var now = getLastTimeFrame().gamestate.frame;
-					var roundtripFrames = now - msg.oframe;
-					var clientFrames = msg.oframe + roundtripFrames*0.5;
-					var framesDifference = clientFrames - msg.nframe;
-
-					// How fast do we want to get to server's time
-					latencySolvingFrames = 30;
-
-					var newLatencySolving = toMs(framesDifference)/latencySolvingFrames;
-					latencySolving = latencySolving*0.5+newLatencySolving*0.5;
-					latencyMs = toMs(now-msg.oframe);
-				},
-				setname: function(msg) {
-					playernames[msg.clientid] = msg.name;
-				},
-				connect: function(msg) {
-					simulator.insertEvent(msg.frame,{
-						type: 'connect',
-						clientid: msg.clientid
-					});
-				},
-				disconnect: function(msg) {
-					simulator.insertEvent(msg.frame,{
-						type: 'disconnect',
-						clientid: msg.clientid
-					});
-				},
-				up: function(msg) {
-					simulator.insertEvent(msg.frame,{
-						type: 'up',
-						clientid: msg.clientid,
-						key: msg.key
-					});
-				},
-				down: function(msg) {
-					simulator.insertEvent(msg.frame,{
-						type: 'down',
-						clientid: msg.clientid,
-						key: msg.key
-					});
-				}
-			}[msg.type] || consolelog)(msg);
-		};
-
-		function synchronizeTime() {
-			send({
-				type: 'syn',
-				frame: getLastTimeFrame().gamestate.frame
-			});
-		}
-
-		function keyEvent(event) {
-			var timeframe = getLastTimeFrame();
+		function inputEvent(event) {
+			var timeframe = simulator.getLastTimeFrame();
 			simulator.pushEvent(Object.merge({
-				clientid: clientid
+				clientid: networkClient.clientid
 			},event));
-			send(Object.merge({
+			messenger.send(Object.merge({
 				frame: timeframe.gamestate.frame
 			},event));
 		}
@@ -467,13 +412,13 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 			next(g);
 		}
 		function keydown(key) {
-			keyEvent({
+			inputEvent({
 				type: 'down',
 				key: key
 			});
 		}
 		function keyup(key) {
-			keyEvent({
+			inputEvent({
 				type: 'up',
 				key: key
 			});
