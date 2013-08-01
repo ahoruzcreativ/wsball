@@ -99,6 +99,9 @@ define(['eventemitter'],function(eventemitter) {
 				status.total++;
 				loadfunction.call(resources, name,onResourceLoaded);
 			});
+			if (preloadResources[type].length === 0) {
+				onResourceLoaded(null);
+			}
 		}
 		loadMultiple('images',resources.loadImage);
 		loadMultiple('audio',resources.loadAudio);
