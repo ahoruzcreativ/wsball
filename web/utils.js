@@ -13,10 +13,12 @@ define([],function() {
 	function extend(a,b) {
 		for(var n in b) { a[n] = b[n]; }
 	}
-	function assert(b) { if(!b) {
-		debugger;
-		throw new Error('Assertion failed');
-	} }
+	function assert(b) {
+		if(!b) {
+			debugger;
+			throw new Error('Assertion failed');
+		}
+	}
 
 	return {
 		findIndex: findIndex,
