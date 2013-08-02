@@ -30,8 +30,7 @@ define([],function() {
 	function handleInitialize(msg) {
 		this.clientid = msg.clientid;
 
-		// Replace all timeframes with the one we received.
-		this.simulator.timeframes.splice(0,this.simulator.length,msg.timeframe);
+		this.simulator.resetToTimeFrames(msg.timeframes);
 
 		this.status = NetworkClient.STATUS_ACTIVE;
 

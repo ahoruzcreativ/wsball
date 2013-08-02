@@ -40,7 +40,7 @@ define(['./utils'],function(utils) {
 			client.messenger.send({
 				type: 'initialize',
 				clientid: client.id,
-				timeframe: this.simulator.getLastTimeFrame()
+				timeframes: this.simulator.timeframes
 			});
 
 			messenger.onmessage = handleMessage.bind(client);
