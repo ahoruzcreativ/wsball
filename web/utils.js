@@ -19,12 +19,23 @@ define([],function() {
 			throw new Error('Assertion failed');
 		}
 	}
+	function hashCode(str) {
+		var hash = 0, i, c;
+		if (this.length == 0) return hash;
+		for (i = 0, l = this.length; i < l; i++) {
+			c = this.charCodeAt(i);
+			hash = ((hash<<5)-hash)+c;
+			hash |= 0; // Convert to 32bit integer
+		}
+		return hash;
+	}
 
 	return {
 		findIndex: findIndex,
 		contains: contains,
 		remove: remove,
 		extend: extend,
-		assert: assert
+		assert: assert,
+		hashCode: hashCode
 	};
 });
