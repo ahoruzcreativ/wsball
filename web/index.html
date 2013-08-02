@@ -1,12 +1,115 @@
 <html>
 <head>
 <title>WebsocketBall</title>
-<link href="main.css" rel="stylesheet" type="text/css">
+<link href="css/bootstrap.css" rel="stylesheet" type="text/css">
+<style>
+.input-group, .rooms {
+	width: 30em;
+}
+.rooms td.name {
+	text-overflow: ellipsis;
+}
+.rooms td.buttons {
+	text-align: right;
+}
+</style>
+<script>
+function getJSON(url,cb) {
+	var r = new XMLHttpRequest();
+	r.open('GET', url, true);
+	r.onreadystatechange = function () {
+		if (r.readyState === 4) {
+			if (r.status != 200) {
+				cb(r);
+			} else {
+				cb(null,JSON.parse(r.responseText));
+			}
+		}
+	};
+	r.send(null);
+}
 
-<script src="sugar-1.3.9.min.js"></script>
-<script data-main="main" src="require.js"></script>
+function c(tagName,attr,children) {
+	var r = document.createElement(tagName);
+	if (attr) {
+		for(var name in attr) {
+			r.setAttribute(name, attr[name]);
+		}
+	}
+	if (children) {
+		for(var i=0;i<children.length;i++) {
+			if (children[i]) {
+				r.appendChild(children[i]);
+			}
+		}
+	}
+	return r;
+}
+function text(str) {
+	return document.createTextNode(str);
+}
+
+function using(x,f) {
+	f(x);
+	return x;
+}
+
+function replaceContent(e,cs) {
+	e.innerHTML = '';
+	cs.forEach(e.appendChild.bind(e));
+	return e;
+}
+
+function flatten(as) {
+	return as.reduce(function(a,b) { return a.concat(b); });
+}
+
+function create() {
+	window.location.href = '/game.html#' + this.value;
+}
+
+function join(room) {
+	window.location.href = '/game.html#' + this.name;
+}
+
+window.onload = function() {
+	var main = document.getElementById('main');
+
+	var createRoomInput, createRoomButton;
+	var createRoomInputGroup = c('div',{class:'input-group'},[
+		createRoomInput = c('input',{type:'text',class:'form-control'}),
+		c('span',{class:'input-group-btn'},[
+			createRoomButton = c('button',{class:'btn btn-default'},[text('Create')])
+		])
+	]);
+	createRoomButton.onclick = create.bind(createRoomInput);
+
+	main.appendChild(createRoomInputGroup);
+	getJSON('/rooms',function(err,rooms) {
+		replaceContent(main,[
+			createRoomInputGroup,
+			c('table',{class:'rooms'},
+				rooms.map(function(room) {
+					return c('tr',{},[
+						c('td',{class:'name'},[text(room.name)]),
+						c('td',{class:'buttons'},[
+							using(c('button',{class:'btn'},[text('Join')]),function(joinButton) {
+								joinButton.onclick = join.bind(room)
+							})
+						])
+					]);
+				})
+			)
+		]);
+	});
+};
+</script>
 </head>
 <body>
-<canvas id="main" width="800" height="600"></canvas>
+<div class="container">
+<h1>WebsocketBall</h1>
+<div id="main" class="container extended blocks">
+</div>
+</div>
 </body>
 </html>

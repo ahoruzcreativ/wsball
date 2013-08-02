@@ -20,9 +20,11 @@ function createRoom(name) {
 	networkServer.messageHandlers['down'] = handleKeyMsg;
 	networkServer.messageHandlers['setname'] = handleSetname;
 	var room = {
+		name: name,
 		simulator: simulator,
 		networkServer: networkServer
 	};
+	networkServer.onempty = onRoomEmpty.bind(room);
 	rooms[name] = room;
 	return room;
 }
@@ -47,6 +49,10 @@ function createClientInRoom(ws,room) {
 	});
 
 	return client;
+}
+function onRoomEmpty() {
+	this.networkServer.close();
+	delete rooms[this.name];
 }
 
 function handleKeyMsg(msg) {
@@ -85,8 +91,8 @@ function handleSetname(msg) {
 	}
 }
 
-app.ws.usepath('/rooms/hallo',function(req,next) {
-	var roomName = 'hallo';
+app.ws.usepath('/room',function(req,next) {
+	var roomName = req.query.name;
 	var room = getRoom(roomName) || createRoom(roomName);
 
 	if (!utils.contains(req.requestedProtocols,'game')) { console.log('Rejected'); return req.reject(); }
@@ -94,6 +100,17 @@ app.ws.usepath('/rooms/hallo',function(req,next) {
 	var ws = req.accept('game',req.origin);
 
 	createClientInRoom(ws,room);
+});
+
+app.get('/rooms',function(req,res,next) {
+	res.json(
+		Object.keys(rooms).map(function(name) {
+			var room = rooms[name];
+			return {
+				name: name
+			};
+		})
+	);
 });
 
 

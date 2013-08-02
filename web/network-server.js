@@ -56,11 +56,20 @@ define(['./utils'],function(utils) {
 		};
 		p.removeClient = function(client) {
 			utils.remove(this.clients, client);
+			if (this.onclientremoved) {
+				this.onclientremoved(client);
+			}
+			if (this.clients.length === 0 && this.onempty) {
+				this.onempty();
+			}
 		};
 		p.broadcast = function(msg) {
 			this.clients.forEach(function(client) {
 				client.messenger.send(msg);
 			});
+		};
+		p.close = function() {
+			clearTimeout(this.gameupdateTimeout);
 		};
 	})(NetworkServer.prototype);
 
@@ -98,7 +107,7 @@ define(['./utils'],function(utils) {
 			clientid: this.id,
 			frame: simulator.getLastTimeFrame().gamestate.frame
 		});
-		utils.remove(this.server.clients, this);
+		this.server.removeClient(this);
 		console.log('disconnected');
 	}
 
