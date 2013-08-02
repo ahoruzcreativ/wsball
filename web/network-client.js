@@ -9,14 +9,12 @@ define([],function() {
 		};
 		this.messenger.onmessage = handleMessage.bind(this);
 		this.status = NetworkClient.STATUS_INITIALIZING;
-		console.log('NetworkClient');
 
 		this.defaultgamerate = 1000*(1/30);
 		this.latencySolving = 0;
 	}
 
 	function handleMessage(msg) {
-		console.log('handleMessage',msg);
 		if (msg.frame && this.simulator.isFramePrehistoric(msg.frame)) {
 			this.status = NetworkClient.STATUS_RESETTING;
 			this.messenger.send({
@@ -30,7 +28,6 @@ define([],function() {
 
 	// General message handlers.
 	function handleInitialize(msg) {
-		console.log('handleInitialize');
 		this.clientid = msg.clientid;
 
 		// Replace all timeframes with the one we received.
