@@ -1,11 +1,18 @@
 define([],function() {
 	function JsonWebsocketMessenger(ws) {
 		this.ws = ws;
-		ws.onmessage = latencySimulator(latency,handleWebsocketMessage.bind(this));
-		ws.onclose = handleWebsocketClose.bind(this);
+		
+		if (ws.on) {
+			ws.on('message',latencySimulator(latency,handleWebsocketMessage.bind(this)));
+			ws.on('close',handleWebsocketClose.bind(this));
+		} else {
+			ws.onmessage = latencySimulator(latency,handleWebsocketMessage.bind(this));
+			ws.onclose = handleWebsocketClose.bind(this);
+		}
 	}
 	function handleWebsocketMessage(event) {
-		var msg = JSON.parse(event.data);
+		var msg = JSON.parse(event.utf8Data || event.data);
+		// console.log('< ',msg);
 		this.onmessage(msg);
 	}
 	function handleWebsocketClose() {
@@ -13,6 +20,7 @@ define([],function() {
 	}
 	(function(p) {
 		p.send = latencySimulator(latency,function(msg) {
+			// console.log('> ',msg);
 			this.ws.send(JSON.stringify(msg));
 		});
 		p.close = function() {

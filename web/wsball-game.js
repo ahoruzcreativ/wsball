@@ -1,4 +1,9 @@
 define(['./vector','./linesegment'],function(Vector,LineSegment) {
+	function remove(xs,x) {
+		var i = xs.indexOf(x);
+		xs.splice(i,1);
+	}
+	
 	function assert(b) { if(!b) {
 		debugger;
 		throw new Error('Assertion failed');
@@ -100,7 +105,7 @@ define(['./vector','./linesegment'],function(Vector,LineSegment) {
 		for(var i=0;i<players.length;i++) {
 			var p = players[i];
 			if (p === player) { return index; }
-			if (p.team === player.team) { index++; } 
+			if (p.team === player.team) { index++; }
 		}
 	}
 	function positionPlayer(gamestate,player) {
@@ -126,7 +131,7 @@ define(['./vector','./linesegment'],function(Vector,LineSegment) {
 			scores: [0,0],
 			players: [],
 			ball: {x:400,y:300,vx:0,vy:0}
-		};			
+		};
 	}
 	function updateGame(gamestate,events) {
 		var t = new Vector();
@@ -189,7 +194,7 @@ define(['./vector','./linesegment'],function(Vector,LineSegment) {
 				},
 				disconnect: function(ng,event) {
 					var player = playerLookup[event.clientid];
-					ng.players.remove(player);
+					remove(ng.players, player);
 				}
 			}[event.type])(ng,event);
 		});
@@ -375,6 +380,12 @@ define(['./vector','./linesegment'],function(Vector,LineSegment) {
 		return ng;
 	}
 
+	var eventTypePriority = {
+		'connect': 1,
+		'up': 2,
+		'down': 2,
+		'disconnect': 5
+	};
 	function compare(va,vb) {
 		if (va === undefined) {
 			if (vb === undefined) { return 0; }
@@ -385,7 +396,8 @@ define(['./vector','./linesegment'],function(Vector,LineSegment) {
 		return (va > vb) ? 1 : (vb > va ? -1 : 0);
 	}
 	function compareEvents(ea,eb) {
-		return compare(ea.type,eb.type) || compare(ea.clientid,eb.clientid) || compare(ea.key,eb.key) || compare(ea.name,eb.name);
+		console.log(ea.type);
+		return compare(eventTypePriority[ea.type],eventTypePriority[eb.type]) || compare(ea.clientid,eb.clientid) || compare(ea.key,eb.key) || compare(ea.name,eb.name);
 	}
 
 	return {

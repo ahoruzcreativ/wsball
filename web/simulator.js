@@ -65,6 +65,7 @@ define([],function() {
 			this.insertEvent(this.getCurrentFrame(),event);
 		};
 		p.insertEvent = function(frame,event) {
+			assert(event);
 			var frameIndex = this.getLastTimeFrame().gamestate.frame - frame;
 			if (frameIndex < 0) { // Event in the future?
 				var index = findIndex(this.futureEvents, function(futureEvent) {
@@ -86,7 +87,9 @@ define([],function() {
 		p.resetToTimeFrames = function(newTimeframes) {
 			this.timeframes.length = 0;
 			Array.prototype.push.apply(this.timeframes,newTimeframes);
-			assert(this.timeframes[0].gamestate.frame === (this.timeframes[1].gamestate.frame+1));
+			if (this.timeframes.length > 1) {
+				assert(this.timeframes[0].gamestate.frame === (this.timeframes[1].gamestate.frame+1));
+			}
 		};
 		p.isFramePrehistoric = function(frame) {
 			return frame < this.timeframes[this.timeframes.length-1].gamestate.frame;
@@ -99,6 +102,9 @@ define([],function() {
 		};
 		p.getLastTimeFrame = function() {
 			return this.timeframes[0];
+		};
+		p.getLastFrame = function() {
+			return this.getLastTimeFrame().gamestate.frame;
 		};
 		function addSorted(arr,item,compare) {
 			var i;
