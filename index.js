@@ -4,14 +4,8 @@ var requirejs = require('requirejs');
 requirejs.config({
 	nodeRequire: require
 });
-requirejs(['./web/simulator','./web/wsball-game','./web/jsonwebsocketmessenger','./web/network-server'],function(Simulator,game,JsonWebsocketMessenger,NetworkServer) {
+requirejs(['./web/utils','./web/simulator','./web/wsball-game','./web/jsonwebsocketmessenger','./web/network-server'],function(utils,Simulator,game,JsonWebsocketMessenger,NetworkServer) {
 //require('sugar');
-
-function contains(xs,x) { return xs.indexOf(x) >= 0; }
-function remove(xs,x) {
-	var i = xs.indexOf(x);
-	xs.splice(i,1);
-}
 
 var app = express();
 
@@ -65,7 +59,7 @@ function handleSetname(msg) {
 }
 
 app.ws.usepath('/client',function(req,next) {
-	if (!contains(req.requestedProtocols,'game')) { console.log('Rejected'); return req.reject(); }
+	if (!utils.contains(req.requestedProtocols,'game')) { console.log('Rejected'); return req.reject(); }
 	console.log('connected');
 	var ws = req.accept('game',req.origin);
 	var messenger = new JsonWebsocketMessenger(ws);

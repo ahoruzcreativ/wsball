@@ -1,14 +1,4 @@
-define(['./vector','./linesegment'],function(Vector,LineSegment) {
-	function remove(xs,x) {
-		var i = xs.indexOf(x);
-		xs.splice(i,1);
-	}
-	
-	function assert(b) { if(!b) {
-		debugger;
-		throw new Error('Assertion failed');
-	} }
-
+define(['./utils','./vector','./linesegment'],function(utils,Vector,LineSegment) {
 	var constants = {
 		ball_radius: 10,
 		ball_mass: 5,
@@ -141,7 +131,7 @@ define(['./vector','./linesegment'],function(Vector,LineSegment) {
 		var og = gamestate;
 		var playerLookup = {};
 
-		assert(og.scores);
+		utils.assert(og.scores);
 
 		// Create new gamestate from old gamestate.
 		var ng = {
@@ -194,7 +184,7 @@ define(['./vector','./linesegment'],function(Vector,LineSegment) {
 				},
 				disconnect: function(ng,event) {
 					var player = playerLookup[event.clientid];
-					remove(ng.players, player);
+					utils.remove(ng.players, player);
 				}
 			}[event.type])(ng,event);
 		});

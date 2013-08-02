@@ -1,16 +1,4 @@
-define([],function() {
-	function assert(b) { if(!b) {
-		debugger;
-		throw new Error('Assertion failed');
-	} }
-
-	function findIndex(arr,f) {
-		for(var i=0;i<arr.length;i++) {
-			if (f(arr[i],i)) { return i; }
-		}
-		return -1;
-	}
-
+define(['./utils'],function(utils) {
 	/** @constructor */
 	function Simulator(game) {
 		this.futureEvents = [];
@@ -23,8 +11,8 @@ define([],function() {
 	(function(p) {
 		p.getTimeFrame = function(frame) {
 			var frameIndex = this.timeframes[0].gamestate.frame - frame;
-			assert(frameIndex >= 0, 'The frame '+frame+' was newer than the last frame '+this.timeframes[0].gamestate.frame);
-			assert(frameIndex < this.timeframes.length, 'The frame '+frame+' was too old! (max '+this.timeframes.length+')');
+			utils.assert(frameIndex >= 0, 'The frame '+frame+' was newer than the last frame '+this.timeframes[0].gamestate.frame);
+			utils.assert(frameIndex < this.timeframes.length, 'The frame '+frame+' was too old! (max '+this.timeframes.length+')');
 			return this.timeframes[frameIndex];
 		};
 		p.recalculateGameStates = function(fromframe) {
@@ -65,10 +53,10 @@ define([],function() {
 			this.insertEvent(this.getCurrentFrame(),event);
 		};
 		p.insertEvent = function(frame,event) {
-			assert(event);
+			utils.assert(event);
 			var frameIndex = this.getLastTimeFrame().gamestate.frame - frame;
 			if (frameIndex < 0) { // Event in the future?
-				var index = findIndex(this.futureEvents, function(futureEvent) {
+				var index = utils.findIndex(this.futureEvents, function(futureEvent) {
 					return frame < futureEvent.frame;
 				});
 				if (index === -1) { index = this.futureEvents.length; }
@@ -88,7 +76,7 @@ define([],function() {
 			this.timeframes.length = 0;
 			Array.prototype.push.apply(this.timeframes,newTimeframes);
 			if (this.timeframes.length > 1) {
-				assert(this.timeframes[0].gamestate.frame === (this.timeframes[1].gamestate.frame+1));
+				utils.assert(this.timeframes[0].gamestate.frame === (this.timeframes[1].gamestate.frame+1));
 			}
 		};
 		p.isFramePrehistoric = function(frame) {

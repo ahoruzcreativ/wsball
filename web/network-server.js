@@ -1,10 +1,4 @@
-define([],function() {
-	function contains(xs,x) { return xs.indexOf(x) >= 0; }
-	function remove(xs,x) {
-		var i = xs.indexOf(x);
-		xs.splice(i,1);
-	}
-
+define(['./utils'],function(utils) {
 	function test(f) {
 		console.log('before');
 		try {
@@ -55,7 +49,7 @@ define([],function() {
 			return client;
 		};
 		p.removeClient = function(client) {
-			remove(this.clients, client);
+			utils.remove(this.clients, client);
 		};
 		p.broadcast = function(msg) {
 			this.clients.forEach(function(client) {
@@ -98,7 +92,7 @@ define([],function() {
 			clientid: this.id,
 			frame: simulator.getLastTimeFrame().gamestate.frame
 		});
-		remove(this.server.clients, this);
+		utils.remove(this.server.clients, this);
 		console.log('disconnected');
 	}
 
