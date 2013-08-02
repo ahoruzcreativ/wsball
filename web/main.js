@@ -135,7 +135,7 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 		playernameInput.onchange = function() { setName(playernameInput.value); };
 		document.body.appendChild(playernameInput);
 
-		networkClient.onclose = safeRefresh;
+		messenger.onclose = safeRefresh;
 
 		function setName(name) {
 			playernames[networkClient.clientid] = name;
