@@ -100,7 +100,7 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 				new_uri = 'ws:';
 			}
 			new_uri += '//' + loc.host;
-			new_uri += '/client';
+			new_uri += '/rooms/hallo';
 
 			var ws = new WebSocket(new_uri, 'game');
 			ws.onopen = function() {

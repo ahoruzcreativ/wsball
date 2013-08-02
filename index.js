@@ -9,18 +9,45 @@ requirejs(['./web/utils','./web/simulator','./web/wsball-game','./web/jsonwebsoc
 
 var app = express();
 
-var clients = [];
-var newid = 1;
 app.use(express.static('web'));
 
-var simulator = new Simulator(game);
-var networkServer = new NetworkServer(simulator);
-var updateGame = simulator.updateGame.bind(simulator);
-var insertEvent = simulator.insertEvent.bind(simulator);
+var rooms = {};
 
-networkServer.messageHandlers['up'] = handleKeyMsg;
-networkServer.messageHandlers['down'] = handleKeyMsg;
-networkServer.messageHandlers['setname'] = handleSetname;
+function createRoom(name) {
+	var simulator = new Simulator(game);
+	var networkServer = new NetworkServer(simulator);
+	networkServer.messageHandlers['up'] = handleKeyMsg;
+	networkServer.messageHandlers['down'] = handleKeyMsg;
+	networkServer.messageHandlers['setname'] = handleSetname;
+	var room = {
+		simulator: simulator,
+		networkServer: networkServer
+	};
+	rooms[name] = room;
+	return room;
+}
+
+function getRoom(name) {
+	return rooms[name];
+}
+
+function createClientInRoom(ws,room) {
+	var networkServer = room.networkServer;
+	var messenger = new JsonWebsocketMessenger(ws);
+	var client = networkServer.createClient(messenger);
+
+	networkServer.clients.forEach(function(other) {
+		if (other === client) { return; }
+		if (!other.name) { return; }
+		client.messenger.send({
+			type: 'setname',
+			clientid: other.id,
+			name: other.name
+		});
+	});
+
+	return client;
+}
 
 function handleKeyMsg(msg) {
 	var simulator = this.server.simulator;
@@ -58,25 +85,15 @@ function handleSetname(msg) {
 	}
 }
 
-app.ws.usepath('/client',function(req,next) {
+app.ws.usepath('/rooms/hallo',function(req,next) {
+	var roomName = 'hallo';
+	var room = getRoom(roomName) || createRoom(roomName);
+
 	if (!utils.contains(req.requestedProtocols,'game')) { console.log('Rejected'); return req.reject(); }
 	console.log('connected');
 	var ws = req.accept('game',req.origin);
-	var messenger = new JsonWebsocketMessenger(ws);
-	var client = networkServer.createClient(messenger);
 
-	clients.forEach(function(other) {
-		if (other === client) { return; }
-		if (!other.name) { return; }
-		client.messenger.send({
-			type: 'setname',
-			clientid: other.id,
-			name: other.name
-		});
-	});
-	ws.on('error',function() {
-		console.error('websocket error',arguments);
-	});
+	createClientInRoom(ws,room);
 });
 
 
@@ -114,7 +131,7 @@ function update() {
 	});*/
 }
 
-setInterval(update,1000*(1/30));
+// setInterval(update,1000*(1/30));
 
 
 process.on('uncaughtException', function (err) {

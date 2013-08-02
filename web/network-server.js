@@ -17,6 +17,12 @@ define(['./utils'],function(utils) {
 			'ack': handleAck,
 			'resetrequest': handleResetrequest
 		};
+		this.defaultgamerate = 1000*(1/30);
+		this.gameupdateTimeout = setTimeout(update.bind(this), this.defaultgamerate);
+	}
+	function update() {
+		this.simulator.updateGame();
+		this.gameupdateTimeout = setTimeout(update.bind(this), this.defaultgamerate);
 	}
 	(function(p) {
 		p.createClient = function(messenger) {
