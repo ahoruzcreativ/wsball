@@ -45,7 +45,7 @@ define(['./utils'],function(utils) {
 			}
 
 			// Remove old timeframes
-			while (this.timeframes.length > 15) {
+			while (this.timeframes.length > 50) {
 				this.timeframes.pop();
 			}
 		};
