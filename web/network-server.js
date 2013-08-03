@@ -52,6 +52,10 @@ define(['./utils'],function(utils) {
 			messenger.onmessage = handleMessage.bind(client);
 			messenger.onclose = handleDisconnect.bind(client);
 
+			if (this.onclientadded) {
+				this.onclientadded(client);
+			}
+
 			return client;
 		};
 		p.removeClient = function(client) {
@@ -75,7 +79,7 @@ define(['./utils'],function(utils) {
 
 	function handleMessage(msg) {
 		if (msg.frame && this.server.simulator.isFramePrehistoric(msg.frame)) {
-			console.log('RESET',this.id);
+			console.log('Detected message from prehistoric frame (' + msg.frame + ') from',this.id);
 			this.sendReset();
 		} else {
 			this.server.messageHandlers[msg.type].call(this,msg);
@@ -94,6 +98,7 @@ define(['./utils'],function(utils) {
 		this.latency = msg.latency;
 	}
 	function handleResetrequest(msg) {
+		console.log('Got request to reset from client',this.id);
 		this.sendReset();
 	}
 	function handleDisconnect() {

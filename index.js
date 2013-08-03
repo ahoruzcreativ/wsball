@@ -24,6 +24,7 @@ function createRoom(name) {
 		simulator: simulator,
 		networkServer: networkServer
 	};
+	networkServer.onclientremoved = onClientRemoved.bind(room);
 	networkServer.onempty = onRoomEmpty.bind(room);
 
 	rooms.push(room);
@@ -54,20 +55,39 @@ function createClientInRoom(ws,room) {
 
 	return client;
 }
+function onClientRemoved() {
+	var room = this;
+	if (room.networkServer.clients.length > 0) {
+		onRoomUpdated(room);
+	}
+}
 function onRoomEmpty() {
 	var room = this;
 	room.networkServer.close();
 
 	utils.remove(rooms,room);
-	delete rooms[room.name];
+	delete roomLookup[room.name];
 	onRoomRemoved(room);
 }
+function getRoomViewModel(room) {
+	return {
+		name: room.name,
+		players: room.networkServer.clients.length
+	};
+}
 function onRoomAdded(room) {
-	console.log('Room added:',room);
 	roomWatchers.forEach(function(watcher) {
 		watcher.send({
 			type: 'add',
-			room: {name: room.name}
+			room: getRoomViewModel(room)
+		});
+	});
+}
+function onRoomUpdated(room) {
+	roomWatchers.forEach(function(watcher) {
+		watcher.send({
+			type: 'update',
+			room: getRoomViewModel(room)
 		});
 	});
 }
@@ -88,6 +108,7 @@ function handleKeyMsg(msg) {
 	});
 	if (msg.frame < simulator.timeframes[simulator.timeframes.length-1].gamestate.frame) {
 		msg.frame = simulator.timeframes[simulator.timeframes.length-1].gamestate.frame;
+		console.log('Detected old message from client',this.id);
 		sendReset();
 	}
 	this.broadcast({
@@ -117,13 +138,18 @@ function handleSetname(msg) {
 
 app.ws.usepath('/room',function(req,next) {
 	var roomName = req.query.name;
-	var room = getRoom(roomName) || createRoom(roomName);
+	var newRoom = false;
+	var room = getRoom(roomName) || ((newRoom = true) && createRoom(roomName));
 
 	if (!utils.contains(req.requestedProtocols,'game')) { console.log('Rejected'); return req.reject(); }
 	console.log('connected');
 	var ws = req.accept('game',req.origin);
 
 	createClientInRoom(ws,room);
+
+	if (!newRoom) {
+		onRoomUpdated(room);
+	}
 });
 
 var roomWatchers = [];
@@ -133,7 +159,7 @@ app.ws.usepath('/rooms',function(req,next) {
 	var messenger = new JsonWebsocketMessenger(ws);
 	messenger.send({
 		type:'init',
-		rooms:rooms.map(function(room) { return {name: room.name}; })
+		rooms:rooms.map(getRoomViewModel)
 	});
 	messenger.onclose = function() {
 		utils.remove(roomWatchers,messenger);

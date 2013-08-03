@@ -67,6 +67,13 @@ function replaceContent(e,cs) {
 	return e;
 }
 
+function replace(search,replacement) {
+	if (search === replacement) { return; }
+	var parent = search.parentNode;
+	parent.insertBefore(replacement,search);
+	parent.removeChild(search);
+}
+
 function flatten(as) {
 	return as.reduce(function(a,b) { return a.concat(b); });
 }
@@ -154,9 +161,11 @@ p.done(function(err,args) {
 	var messageHandlers = {
 		'init': handleInitRooms,
 		'add': handleAddRoom,
-		'remove': handleRemoveRoom
+		'remove': handleRemoveRoom,
+		'update': handleUpdateRoom
 	};
 	messenger.onmessage = function(msg) {
+		console.log(msg);
 		messageHandlers[msg.type](msg);
 	};
 	messenger.onclose = function() {
@@ -171,6 +180,9 @@ p.done(function(err,args) {
 	}
 	function handleRemoveRoom(msg) {
 		removeRoomByName(msg.name);
+	}
+	function handleUpdateRoom(msg) {
+		updateRoom(msg.room);
 	}
 
 	function create() {
@@ -203,9 +215,18 @@ p.done(function(err,args) {
 		delete roomsLookup[room.name];
 	}
 
+	function updateRoom(room) {
+		var oldroom = roomsLookup[room.name];
+		room.row = createRoomRow(room);
+		roomsLookup[room.name] = room;
+		rooms.splice(rooms.indexOf(oldroom),1,room);
+		replace(oldroom.row, room.row);
+	}
+
 	function createRoomRow(room) {
 		return c('tr',{},[
 			c('td',{class:'name'},[text(room.name)]),
+			c('td',{class:'name'},[text(room.players)]),
 			c('td',{class:'buttons'},[
 				using(c('button',{class:'btn'},[text('Join')]),function(joinButton) {
 					joinButton.onclick = join.bind(room)
