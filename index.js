@@ -5,13 +5,13 @@ requirejs.config({
 	nodeRequire: require
 });
 requirejs(['./web/utils','./web/simulator','./web/wsball-game','./web/jsonwebsocketmessenger','./web/network-server'],function(utils,Simulator,game,JsonWebsocketMessenger,NetworkServer) {
-//require('sugar');
 
 var app = express();
 
 app.use(express.static('web'));
 
-var rooms = {};
+var rooms = [];
+var roomLookup = {};
 
 function createRoom(name) {
 	var simulator = new Simulator(game);
@@ -25,12 +25,16 @@ function createRoom(name) {
 		networkServer: networkServer
 	};
 	networkServer.onempty = onRoomEmpty.bind(room);
-	rooms[name] = room;
+
+	rooms.push(room);
+	roomLookup[room.name] = room;
+	onRoomAdded(room);
+
 	return room;
 }
 
 function getRoom(name) {
-	return rooms[name];
+	return roomLookup[name];
 }
 
 function createClientInRoom(ws,room) {
@@ -51,10 +55,30 @@ function createClientInRoom(ws,room) {
 	return client;
 }
 function onRoomEmpty() {
-	this.networkServer.close();
-	delete rooms[this.name];
-}
+	var room = this;
+	room.networkServer.close();
 
+	utils.remove(rooms,room);
+	delete rooms[room.name];
+	onRoomRemoved(room);
+}
+function onRoomAdded(room) {
+	console.log('Room added:',room);
+	roomWatchers.forEach(function(watcher) {
+		watcher.send({
+			type: 'add',
+			room: {name: room.name}
+		});
+	});
+}
+function onRoomRemoved(room) {
+	roomWatchers.forEach(function(watcher) {
+		watcher.send({
+			type: 'remove',
+			name: room.name
+		});
+	});
+}
 function handleKeyMsg(msg) {
 	var simulator = this.server.simulator;
 	simulator.insertEvent(msg.frame,{
@@ -102,17 +126,20 @@ app.ws.usepath('/room',function(req,next) {
 	createClientInRoom(ws,room);
 });
 
-app.get('/rooms',function(req,res,next) {
-	res.json(
-		Object.keys(rooms).map(function(name) {
-			var room = rooms[name];
-			return {
-				name: name
-			};
-		})
-	);
+var roomWatchers = [];
+app.ws.usepath('/rooms',function(req,next) {
+	if (!utils.contains(req.requestedProtocols,'rooms')) { console.log('Rejected'); return req.reject(); }
+	var ws = req.accept('rooms',req.origin);
+	var messenger = new JsonWebsocketMessenger(ws);
+	messenger.send({
+		type:'init',
+		rooms:rooms.map(function(room) { return {name: room.name}; })
+	});
+	messenger.onclose = function() {
+		utils.remove(roomWatchers,messenger);
+	};
+	roomWatchers.push(messenger);
 });
-
 
 app.listen(8085);
 

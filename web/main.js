@@ -86,6 +86,12 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 		console.log.apply(console,arguments);
 	}
 
+	function getWebsocketUrl(path) {
+		return (window.location.protocol === 'https:'
+			? 'wss:'
+			: 'ws:') + '//' + window.location.host + '/' + path;
+	}
+
 	function connectingState() {
 		var me = {
 			enabled: false,
@@ -93,16 +99,7 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 			disable: disable
 		};
 		function enable() {
-			var loc = window.location, new_uri;
-			if (loc.protocol === 'https:') {
-				new_uri = 'wss:';
-			} else {
-				new_uri = 'ws:';
-			}
-			new_uri += '//' + loc.host;
-			new_uri += '/room?name='+window.location.hash.substr(1);
-
-			var ws = new WebSocket(new_uri, 'game');
+			var ws = new WebSocket(getWebsocketUrl('room?name='+window.location.hash.substr(1)), 'game');
 			ws.onopen = function() {
 				g.changeState(gameplayState(ws));
 			};
