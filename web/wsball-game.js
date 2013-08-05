@@ -373,7 +373,7 @@ define(['./utils','./vector','./linesegment'],function(utils,Vector,LineSegment)
 	var eventTypePriority = {
 		'connect': 1,
 		'up': 2,
-		'down': 2,
+		'down': 3,
 		'disconnect': 5
 	};
 	function compare(va,vb) {
@@ -386,7 +386,6 @@ define(['./utils','./vector','./linesegment'],function(utils,Vector,LineSegment)
 		return (va > vb) ? 1 : (vb > va ? -1 : 0);
 	}
 	function compareEvents(ea,eb) {
-		console.log(ea.type);
 		return compare(eventTypePriority[ea.type],eventTypePriority[eb.type]) || compare(ea.clientid,eb.clientid) || compare(ea.key,eb.key) || compare(ea.name,eb.name);
 	}
 
