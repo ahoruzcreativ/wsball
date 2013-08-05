@@ -386,6 +386,8 @@ define(['./utils','./vector','./linesegment'],function(utils,Vector,LineSegment)
 		return (va > vb) ? 1 : (vb > va ? -1 : 0);
 	}
 	function compareEvents(ea,eb) {
+		utils.assert(eventTypePriority[ea.type]);
+		utils.assert(eventTypePriority[eb.type]);
 		return compare(eventTypePriority[ea.type],eventTypePriority[eb.type]) || compare(ea.clientid,eb.clientid) || compare(ea.key,eb.key) || compare(ea.name,eb.name);
 	}
 
