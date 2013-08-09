@@ -79,9 +79,9 @@ define([],function() {
 		});
 	}
 	(function(p) {
-		p.STATUS_ACTIVE = 0;
-		p.STATUS_INITIALIZING = 1;
-		p.STATUS_RESETTING = 2;
+		NetworkClient.STATUS_ACTIVE = 0;
+		NetworkClient.STATUS_INITIALIZING = 1;
+		NetworkClient.STATUS_RESETTING = 2;
 
 		p.update = update;
 	})(NetworkClient.prototype);
