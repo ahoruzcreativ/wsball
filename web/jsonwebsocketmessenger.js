@@ -1,4 +1,4 @@
-define([],function() {
+define(['./utils'],function(utils) {
 	function JsonWebsocketMessenger(ws) {
 		this.ws = ws;
 		
@@ -11,8 +11,9 @@ define([],function() {
 		}
 	}
 	function handleWebsocketMessage(event) {
-		var msg = JSON.parse(event.utf8Data || event.data);
-		// console.log('< ',msg);
+		var data = event.utf8Data || event.data;
+		// console.log('<',msg.type,data);
+		var msg = utils.JSONparse(data);
 		this.onmessage(msg);
 	}
 	function handleWebsocketClose() {
@@ -20,8 +21,8 @@ define([],function() {
 	}
 	(function(p) {
 		p.send = latencySimulator(latency,function(msg) {
-			// console.log('> ',msg);
-			this.ws.send(JSON.stringify(msg));
+			// console.log('>',msg.type,utils.JSONstringify(msg));
+			this.ws.send(utils.JSONstringify(msg));
 		});
 		p.close = function() {
 			this.ws.close();
