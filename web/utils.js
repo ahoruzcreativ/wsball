@@ -29,6 +29,24 @@ define([],function() {
 		}
 		return hash;
 	}
+	function JSONstringify(obj) {
+		if (obj === undefined) {
+			return 'undefined';
+		} else if (obj === 'null') {
+			return 'null';
+		} else if(Object.prototype.toString.call(obj) === '[object Array]') {
+			return '[' + obj.map(JSONstringify).join(',') + ']';
+		} else if (typeof obj === 'object') {
+			var keys = Object.keys(obj).sort();
+			return '{' + keys.map(function(key) {
+				return JSONstringify(key) + ':' + JSONstringify(obj[key]);
+			}).join(',') + '}';
+		} else if (typeof obj === 'string') {
+			return '"' + obj.replace('\\','\\\\').replace('"','\\"') + '"';
+		} else if (typeof obj === 'number') {
+			return obj.toString();
+		}
+	}
 
 	return {
 		findIndex: findIndex,
@@ -36,6 +54,7 @@ define([],function() {
 		remove: remove,
 		extend: extend,
 		assert: assert,
-		hashCode: hashCode
+		hashCode: hashCode,
+		JSONstringify: JSONstringify
 	};
 });
