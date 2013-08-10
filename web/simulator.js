@@ -72,9 +72,21 @@ define(['./utils'],function(utils) {
 				throw new Error('The inserted frame is prehistoric: it is too old to simulate');
 			}
 		};
-		p.resetToTimeFrames = function(newTimeframes) {
+		p.resetToTimeFrames = function(newTimeframes,newFutureEvents) {
+			console.log('!RESET to',newTimeframes[0].gamestate.frame,'with',newTimeframes.length,'timeframes and',newFutureEvents.length,'future events');
+
+			// Reset timeframes
 			this.timeframes.length = 0;
-			Array.prototype.push.apply(this.timeframes,newTimeframes);
+			for(var i=0;i<newTimeframes.length;i++) {
+				this.timeframes.push(newTimeframes[i]);
+			}
+
+			// Reset futureEvents
+			this.futureEvents.length = 0;
+			for(var i=0;i<newFutureEvents.length;i++) {
+				this.futureEvents.push(newFutureEvents[i]);
+			}
+
 			if (this.timeframes.length > 1) {
 				utils.assert(this.timeframes[0].gamestate.frame === (this.timeframes[1].gamestate.frame+1));
 			}
