@@ -6,7 +6,8 @@
   "dependencies": {
     "websocket": "~1.0.8",
     "async": "~0.2.6",
-    "express": "~3.1.0"
+    "express": "~3.1.0",
+    "requirejs": "~2.1.8"
   },
   "devDependencies": {},
   "scripts": {
