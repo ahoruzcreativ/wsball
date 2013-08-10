@@ -1,4 +1,7 @@
 define([],function() {
+	function debug(/*...*/) {
+		// console.log.apply(console,arguments);
+	}
 	function findIndex(xs,f) {
 		for(var i=0;i<xs.length;i++) {
 			if (f(xs[i],i)) { return i; }

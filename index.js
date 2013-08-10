@@ -104,7 +104,8 @@ function handleKeyMsg(msg) {
 	simulator.insertEvent(msg.frame,{
 		type: msg.type,
 		clientid: this.id,
-		key: msg.key
+		key: msg.key,
+		countid: msg.countid
 	});
 	if (msg.frame < simulator.timeframes[simulator.timeframes.length-1].gamestate.frame) {
 		msg.frame = simulator.timeframes[simulator.timeframes.length-1].gamestate.frame;
@@ -115,19 +116,22 @@ function handleKeyMsg(msg) {
 		type: msg.type,
 		clientid: this.id,
 		key: msg.key,
-		frame: msg.frame
+		frame: msg.frame,
+		countid: msg.countid
 	});
 }
 
 function handleSetname(msg) {
 	if (/^[a-zA-Z0-9_\-\.]{1,5}$/.test(msg.name)) {
+		// Name is accepted, send it to other clients.
 		this.name = msg.name;
-		this.sendToOthers({
+		this.broadcast({
 			type: msg.type,
 			clientid: this.id,
 			name: msg.name
 		});
 	} else {
+		// Chosen name is invalid, send old name back to client.
 		this.messenger.send({
 			type:'setname',
 			clientid:this.id,

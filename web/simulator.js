@@ -7,7 +7,12 @@ define(['./utils'],function(utils) {
 			gamestate: game.init()
 		}];
 		this.game = game;
+		this.maxFramesInHistory = Simulator.defaultMaxFramesInHistory;
 	}
+
+	// No maximum of frames: handle frame removal yourself.
+	Simulator.defaultMaxFramesInHistory = 10;
+
 	(function(p) {
 		p.getTimeFrame = function(frame) {
 			var frameIndex = this.timeframes[0].gamestate.frame - frame;
@@ -44,9 +49,20 @@ define(['./utils'],function(utils) {
 				addSorted(this.timeframes[0].events,futureEvent.event,this.game.compareEvents);
 			}
 
-			// Remove old timeframes
-			while (this.timeframes.length > 50) {
-				this.timeframes.pop();
+			if (this.maxFramesInHistory >= 0) {
+				// Remove old timeframes
+				while (this.timeframes.length > this.maxFramesInHistory) {
+					var timeframe = this.timeframes.pop();
+					utils.debug('!STATE:',timeframe.gamestate.frame,utils.hashCode(utils.JSONstringify(timeframe.gamestate)));
+					timeframe.events.forEach(function(event) {
+						utils.debug('!EVENT:',timeframe.gamestate.frame,utils.JSONstringify(event));
+					});
+				}
+			}
+		};
+		p.fastForward = function(frame) {
+			while(this.getCurrentFrame() < frame) {
+				this.updateGame();
 			}
 		};
 		p.pushEvent = function(event) {

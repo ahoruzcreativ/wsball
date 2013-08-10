@@ -27,6 +27,7 @@ define(['./utils'],function(utils) {
 	(function(p) {
 		p.createClient = function(messenger) {
 			var client = new Client();
+			client.status = Client.STATUS_ACTIVE;
 			client.id = this.newclientid++;
 			client.server = this;
 			client.messenger = messenger;
@@ -46,7 +47,8 @@ define(['./utils'],function(utils) {
 			client.messenger.send({
 				type: 'initialize',
 				clientid: client.id,
-				timeframes: this.simulator.timeframes
+				timeframes: this.simulator.timeframes,
+				futureEvents: this.simulator.futureEvents
 			});
 
 			messenger.onmessage = handleMessage.bind(client);
@@ -78,9 +80,12 @@ define(['./utils'],function(utils) {
 	})(NetworkServer.prototype);
 
 	function handleMessage(msg) {
-		if (msg.frame && this.server.simulator.isFramePrehistoric(msg.frame)) {
-			console.log('Detected message from prehistoric frame (' + msg.frame + ') from',this.id);
-			this.sendReset();
+		if (msg.frame && msg.type !== 'syn' && this.server.simulator.isFramePrehistoric(msg.frame)) {
+			console.log('Detected message from prehistoric frame',msg.frame,'from client',this.id);
+			if (this.status === Client.STATUS_ACTIVE) {
+				console.log('Resetting client',this.id,'...');
+				this.sendReset();
+			}
 		} else {
 			this.server.messageHandlers[msg.type].call(this,msg);
 		}
@@ -98,7 +103,7 @@ define(['./utils'],function(utils) {
 		this.latency = msg.latency;
 	}
 	function handleResetrequest(msg) {
-		console.log('Got request to reset from client',this.id);
+		console.log('!RESETREQUEST: from client',this.id);
 		this.sendReset();
 	}
 	function handleDisconnect() {
@@ -117,6 +122,8 @@ define(['./utils'],function(utils) {
 	}
 
 	function Client() { }
+	Client.STATUS_ACTIVE = 0;
+	Client.STATUS_RESETTING = 2;
 	(function(p) {
 		p.broadcast = function(msg) {
 			for(var k in this.server.clients) {
@@ -126,10 +133,13 @@ define(['./utils'],function(utils) {
 			}
 		};
 		p.sendReset = function() {
+			console.log('!SENDRESET: to client',this.id,'to frame',this.server.simulator.getLastFrame());
 			this.messenger.send({
 				type: 'reset',
-				timeframes: this.server.simulator.timeframes
+				timeframes: this.server.simulator.timeframes,
+				futureEvents: this.server.simulator.futureEvents
 			});
+			this.status = Client.STATUS_ACTIVE;
 		};
 	})(Client.prototype);
 

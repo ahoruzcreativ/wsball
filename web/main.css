@@ -8,16 +8,17 @@ body {
 	font-family:arial;
 	font-size:15px;
 }
-#main {
-	background-color: black;
-}
-#main, .overlay {
+.game {
 	width: 800px;
 	height: 600px;
 	margin-left: -400px;
 	left: 50%;
 	position: absolute;
 	border: 1px solid black;
+}
+#main, .overlay {
+	width: 800px;
+	height: 600px;
 }
 .overlay { z-index: 999; }
 

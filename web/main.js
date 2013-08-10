@@ -1,6 +1,6 @@
-define(['platform','game','vector','staticcollidable','linesegment','editor','required','state','level','mouse','collision','keyboard','quake','resources',
+define(['platform','game','vector','staticcollidable','linesegment','editor','required','state','level','mouse','collision','keyboard','quake','resources','graphics',
 		'simulator','wsball-game','jsonwebsocketmessenger','network-client'
-	],function(platform,Game,Vector,StaticCollidable,LineSegment,editor,required,state,level,mouse,collision,keyboard,quake,resources,
+	],function(platform,Game,Vector,StaticCollidable,LineSegment,editor,required,state,level,mouse,collision,keyboard,quake,resources,Graphics,
 		Simulator,game,JsonWebsocketMessenger,NetworkClient
 	) {
 	var t = new Vector(0,0);
@@ -59,28 +59,28 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 	}
 
 	// Auto-refresh
-	(function() {
-		var timeout = setTimeout(function() {
-			safeRefresh();
-		}, 3000);
-		g.once('keydown',function() {
-			disable();
-		});
-		g.once('mousemove',function() {
-			disable();
-		});
-		g.chains.draw.push(draw);
-		function draw(g,next) {
-			g.fillStyle('#ff0000');
-			g.fillCircle(800,0,30);
-			g.fillStyle('black');
-			next(g);
-		}
-		function disable() {
-			clearTimeout(timeout);
-			g.chains.draw.remove(draw);
-		}
-	})();
+	// (function() {
+	// 	var timeout = setTimeout(function() {
+	// 		safeRefresh();
+	// 	}, 3000);
+	// 	g.once('keydown',function() {
+	// 		disable();
+	// 	});
+	// 	g.once('mousemove',function() {
+	// 		disable();
+	// 	});
+	// 	g.chains.draw.push(draw);
+	// 	function draw(g,next) {
+	// 		g.fillStyle('#ff0000');
+	// 		g.fillCircle(800,0,30);
+	// 		g.fillStyle('black');
+	// 		next(g);
+	// 	}
+	// 	function disable() {
+	// 		clearTimeout(timeout);
+	// 		g.chains.draw.remove(draw);
+	// 	}
+	// })();
 
 	function consolelog(/*...*/) {
 		console.log.apply(console,arguments);
@@ -132,7 +132,10 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 		playernameInput.onchange = function() { setName(playernameInput.value); };
 		document.body.appendChild(playernameInput);
 
-		messenger.onclose = safeRefresh;
+		messenger.onclose = function() {
+			networkClient.stop();
+			safeRefresh();
+		};
 
 		function setName(name) {
 			playernames[networkClient.clientid] = name;
@@ -169,19 +172,23 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 				simulator.insertEvent(msg.frame,{
 					type: 'up',
 					clientid: msg.clientid,
-					key: msg.key
+					key: msg.key,
+					countid: msg.countid
 				});
 			};
 			h['down'] = function(msg) {
 				simulator.insertEvent(msg.frame,{
 					type: 'down',
 					clientid: msg.clientid,
-					key: msg.key
+					key: msg.key,
+					countid: msg.countid
 				});
 			};
 		})(networkClient.messageHandlers);
 
+		var counter = 0;
 		function inputEvent(event) {
+			if (networkClient.status !== NetworkClient.STATUS_ACTIVE) { return; }
 			var timeframe = simulator.getLastTimeFrame();
 			simulator.pushEvent(Object.merge({
 				clientid: networkClient.clientid
@@ -193,13 +200,15 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 		function keydown(key) {
 			inputEvent({
 				type: 'down',
-				key: key
+				key: key,
+				countid: counter++
 			});
 		}
 		function keyup(key) {
 			inputEvent({
 				type: 'up',
-				key: key
+				key: key,
+				countid: counter++
 			});
 		}
 		function mousedown(button) {
@@ -218,190 +227,286 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 			g.removeListener('keyup',keyup);
 		}
 
-		function draw(g,next) {
-			var player = getPlayer();
-			if (!player) { return; }
+		function defaultHash(v) {
+			return v.id || v.toString();
+		}
+		function memoize(f,hash){
+			hash = hash || defaultHash;
+			var cache = {};
+			return function(/*...*/){
+				var key = Array.prototype.map.call(arguments,hash).join('|');
+				if(key in cache) {
+					console.log('Cache hit for '+key);
+					return cache[key];
+				} else {
+					console.log('Cache miss for '+key);
+					return cache[key] = f.apply(this,arguments);
+				}
+			};
+		};
 
-			var white = '#eeeeee';
+		var white = '#eeeeee';
 
-			function round(f) {
-				return Math.round(f*100)/100;
-			}
+		function drawField(g) {
+			var ctx = g.context;
+			var level = game.level;
 
+			// Green background
 			g.fillStyle('#19ab1c');
 			g.fillRectangle(0,0,800,600);
 
-			// Draw alternating colors
-			(function() {
-				var width = 50;
-				g.fillStyle('rgba(255,255,255,0.05)');
-				for(var i=0;i<10;i++) {
-					var dir = (i%2 === 0 ? 1 : -1);
-					var x = dir * i * width + 400;
-					g.fillRectangle(x,0,width*dir,600);
-				}
-			})();
+			// Alternating stripes
+			var width = 50;
+			g.fillStyle('rgba(255,255,255,0.05)');
+			for(var i=0;i<10;i++) {
+				var dir = (i%2 === 0 ? 1 : -1);
+				var x = dir * i * width + 400;
+				g.fillRectangle(x,0,width*dir,600);
+			}
 
-			// Draw lines
-			(function() {
-				var level = game.level;
-				var ctx = g.context;
-				g.strokeStyle('rgba(255,255,255,0.5)');
-				g.lineWidth(5);
-				ctx.beginPath();
-				ctx.moveTo(level.ballcollision[0].start.x,level.ballcollision[0].start.y);
-				level.ballcollision.forEach(function(line) {
+			// Draw border lines
+			g.strokeStyle('rgba(255,255,255,0.5)');
+			g.lineWidth(5);
+			ctx.beginPath();
+			ctx.moveTo(level.ballcollision[0].start.x,level.ballcollision[0].start.y);
+			level.ballcollision.forEach(function(line) {
 
-					// HACK: Do not draw collision of goals
-					if (line.start.x <= 10 || line.end.x <= 10) { return; }
-					if (line.start.x >= 790 || line.end.x >= 790) { return; }
+				// HACK: Do not draw collision of goals
+				if (line.start.x <= 10 || line.end.x <= 10) { return; }
+				if (line.start.x >= 790 || line.end.x >= 790) { return; }
 
 
-					ctx.lineTo(line.end.x,line.end.y);
-				});
-				ctx.closePath();
-				ctx.stroke();
-				g.lineWidth(1);
-			})();
+				ctx.lineTo(line.end.x,line.end.y);
+			});
+			ctx.closePath();
+			ctx.stroke();
+			g.lineWidth(1);
+		}
 
+		function pathGoal(g) {
+			var ctx = g.context;
+			var top = 240-5;
+			var bot = 360+5;
+			var front = 50-2;
+			var back = 10;
+			ctx.beginPath();
+			ctx.moveTo(front  ,top);
+			var radius = 20;
+			ctx.lineTo(back+radius,top);
+			ctx.quadraticCurveTo(back,top,back,top+radius);
+
+			ctx.lineTo(back   ,bot-radius);
+			ctx.quadraticCurveTo(back,bot,back+radius,bot);
+			ctx.lineTo(front  ,bot);
+		}
+		function drawGoalShadow(g) {
+			var ctx = g.context;
+			pathGoal(g);
+
+			g.strokeStyle('black');
+			g.lineWidth(10);
+			ctx.shadowBlur=10;
+			ctx.shadowColor='black';
+			ctx.lineCap = 'round';
+			ctx.stroke();
+			ctx.lineCap = 'butt';
+			ctx.shadowBlur=0;
+		}
+		function drawGoal(g,color) {
+			var ctx = g.context;
+			pathGoal(g);
+
+			g.strokeStyle(color);
+			g.lineWidth(10);
+			ctx.lineCap = 'round';
+			ctx.stroke();
+
+			g.strokeStyle('rgba(0,0,0,0.15)');
+			ctx.stroke();
+
+			ctx.lineCap = 'butt';
+		}
+
+		function drawShadow_Nice(g,x,y,r,shadowWidth) {
+			var gradient = g.context.createRadialGradient(x,y,r,x,y,r+shadowWidth);
+			gradient.addColorStop(0,'rgba(0,0,0,0.4)');
+			gradient.addColorStop(1,'transparent');
+			g.fillStyle(gradient);
+			g.fillCircle(x,y,r+shadowWidth);
+		}
+		function drawShadow_Fast(g,x,y,r,shadowWidth) {
+		}
+
+		function drawPlayerShadow(g,player) {
+			drawShadow(g,player.x,player.y,game.constants.player_radius,5);
+		}
+		function drawPlayerShadow_Fast(g,player) {
+		}
+
+		function drawPlayer(g,player) {
+			var x = player.x;
+			var y = player.y;
+
+			g.fillStyle(game.level.teams[player.team].color);
+			g.fillCircle(x,y,game.constants.player_radius);
+
+			g.strokeStyle(player.keys.x
+				? white
+				: 'rgba(0,0,0,0.2)');
+			var playerBorderWidth = 6;
+			g.lineWidth(playerBorderWidth);
+			g.strokeCircle(x,y,game.constants.player_radius - playerBorderWidth*0.5);
+			g.lineWidth(1);
+
+			var playername = playernames[player.clientid];
+			if (playername) {
+				g.fillStyle(white);
+				g.fillCenteredText(playername,x,y);
+			}
+			//g.fillText('Player:'+round(player.x)+','+round(player.y),x,y);
+		}
+
+		function drawBallShadow(g,ball) {
+			drawShadow(g,ball.x,ball.y,game.constants.ball_radius,3);
+		}
+
+		function drawBall(g,ball) {
+			g.fillStyle(white);
+			g.fillCircle(ball.x,ball.y,game.constants.ball_radius);
+		}
+
+		function drawBigText_Nice(g,text,color,x,y) {
+			g.fillStyle('#111');
+			g.fillCenteredText(text, x+3,y+3);
+			g.fillStyle(color);
+			g.context.shadowBlur=10;
+			g.context.shadowColor='#111';
+			g.fillCenteredText(text, x,y);
+			g.context.shadowBlur=0;
+		}
+
+		function drawBigText_Fast(g,text,color,x,y) {
+			g.fillStyle(color);
+			g.fillCenteredText(text, x,y);
+		}
+
+		function drawMultiple(g,arr,f) {
+			for(var i=0;i<arr.length;i++) {
+				f(g,arr[i]);
+			}
+		}
+
+		function round(f) {
+			return Math.round(f*100)/100;
+		}
+
+		function createCanvas(width,height,drawer) {
+			var canvas = document.createElement('canvas');
+			canvas.width = width;
+			canvas.height = height;
+			var context = canvas.getContext('2d');
+			var g = new Graphics(context);
+			canvas.graphics = g;
+			canvas.draw = function() {
+				this.drawer(this.graphics);
+			};
+			canvas.drawer = drawer;
+			canvas.draw();
+			return canvas;
+		}
+		function overlay(canvas) {
+			canvas.style.position = 'absolute';
+			canvas.style.zIndex = 2;
+			g.canvas.parentNode.insertBefore(canvas,g.canvas);
+			canvas.onclick = g.canvas.focus.bind(g.canvas);
+			return canvas;
+		}
+		function underlay(canvas) {
+			canvas.style.position = 'absolute';
+			canvas.style.zIndex = -1;
+			g.canvas.parentNode.insertBefore(canvas,g.canvas);
+			return canvas;
+		}
+
+		var drawBigText = drawBigText_Fast;
+		var drawShadow = drawShadow_Fast;
+
+
+		var field = underlay(createCanvas(800,600,drawField));
+		var staticShadows = underlay(createCanvas(800,600,function(g) {
 			g.context.save();
-			drawGoalShadow();
+			drawGoalShadow(g);
 			g.context.translate(400,300);
 			g.context.scale(-1,1);
 			g.context.translate(-400,-300);
-			drawGoalShadow();
+			drawGoalShadow(g);
 			g.context.restore();
-
-			function drawShadow(x,y,r,shadowWidth) {
-				var gradient = g.context.createRadialGradient(x,y,r,x,y,r+shadowWidth);
-				gradient.addColorStop(0,'rgba(0,0,0,0.4)');
-				gradient.addColorStop(1,'transparent');
-				g.fillStyle(gradient);
-				g.fillCircle(x,y,r+shadowWidth);
-			}
-
-			var drawHistory = Math.min(1,simulator.timeframes.length);
-			for(var i=drawHistory-1;i>=0;i--) {
-				var timeframe = simulator.timeframes[i];
-				g.context.globalAlpha = 1-(i/drawHistory);
-
-				var ball = timeframe.gamestate.ball;
-
-				// Draw player shadows
-				timeframe.gamestate.players.forEach(function(player) {
-					drawShadow(player.x,player.y,game.constants.player_radius,5);
-				});
-
-				drawShadow(ball.x,ball.y,game.constants.ball_radius,3);
-
-				// Draw player bodies
-				timeframe.gamestate.players.forEach(function(player) {
-					var x = player.x;
-					var y = player.y;
-
-					g.fillStyle(game.level.teams[player.team].color);
-					g.fillCircle(x,y,game.constants.player_radius);
-
-					g.strokeStyle(player.keys.x
-						? white
-						: 'rgba(0,0,0,0.2)');
-					var playerBorderWidth = 6;
-					g.lineWidth(playerBorderWidth);
-					g.strokeCircle(x,y,game.constants.player_radius - playerBorderWidth*0.5);
-					g.lineWidth(1);
-
-					var playername = playernames[player.clientid];
-					if (playername) {
-						g.fillStyle(white);
-						g.fillCenteredText(playername,x,y);
-					}
-					//g.fillText('Player:'+round(player.x)+','+round(player.y),x,y);
-				});
-
-				// Draw ball
-				(function() {
-					g.fillStyle(white);
-					g.fillCircle(ball.x,ball.y,game.constants.ball_radius);
-				})();
-			}
-
-			// Draw goal
-			function pathGoal() {
-				var ctx = g.context;
-				var top = 240-5;
-				var bot = 360+5;
-				var front = 50-2;
-				var back = 10;
-				ctx.beginPath();
-				ctx.moveTo(front  ,top);
-				var radius = 20;
-				ctx.lineTo(back+radius,top);
-				ctx.quadraticCurveTo(back,top,back,top+radius);
-
-				ctx.lineTo(back   ,bot-radius);
-				ctx.quadraticCurveTo(back,bot,back+radius,bot);
-				ctx.lineTo(front  ,bot);
-			}
-			function drawGoalShadow() {
-				var ctx = g.context;
-				pathGoal();
-
-				g.strokeStyle('black');
-				g.lineWidth(10);
-				ctx.shadowBlur=10;
-				ctx.shadowColor='black';
-				ctx.lineCap = 'round';
-				ctx.stroke();
-				ctx.lineCap = 'butt';
-				ctx.shadowBlur=0;
-			}
-			function drawGoal(color) {
-				var ctx = g.context;
-				pathGoal();
-
-				g.strokeStyle(color);
-				g.lineWidth(10);
-				ctx.lineCap = 'round';
-				ctx.stroke();
-
-				g.strokeStyle('rgba(0,0,0,0.15)');
-				ctx.stroke();
-
-				ctx.lineCap = 'butt';
-			}
+		}));
+		var staticField = overlay(createCanvas(800,600,function(g) {
 			g.context.save();
-			drawGoal(game.level.teams[0].color);
+			drawGoal(g,game.level.teams[0].color);
 			g.context.translate(400,300);
 			g.context.scale(-1,1);
 			g.context.translate(-400,-300);
-			drawGoal(game.level.teams[1].color);
+			drawGoal(g,game.level.teams[1].color);
 			g.context.restore();
-
+		}));
+		var hud = overlay(createCanvas(800,600,function(g) {
+			g.clear();
 			var gamestate = simulator.getLastTimeFrame().gamestate;
 
-			drawBigText(gamestate.scores[0].toString(), white, 300,42);
-			drawBigText('-', white, 400,42);
-			drawBigText(gamestate.scores[1].toString(), white, 500,42);
+			g.context.font = 'bold 42pt arial';
 
-			function drawBigText(text,color,x,y) {
-				g.context.font = 'bold 42pt arial';
-				g.fillStyle('#111');
-				g.fillCenteredText(text, x+3,y+3);
-				g.fillStyle(color);
-				g.context.shadowBlur=10;
-				g.context.shadowColor='#111';
-				g.fillCenteredText(text, x,y);
-				g.context.font = '12px arial';
-				g.context.shadowBlur=0;
-			}
+			drawBigText(g,gamestate.scores[0].toString(), white, 300,42);
+			drawBigText(g,'-', white, 400,42);
+			drawBigText(g,gamestate.scores[1].toString(), white, 500,42);
 
+		}));
+
+		var debug = overlay(createCanvas(200,300,function(g) {
+			var gamestate = simulator.getLastTimeFrame().gamestate;
+			g.clear();
 			// Draw HUD
 			g.fillStyle('white');
 			g.fillText('Frame:  '+gamestate.frame,100,100);
 			g.fillText('latencySolving: '+round(networkClient.latencySolving),100,110);
 			g.fillText('Latency: '+round(networkClient.latencyMs),100,120);
 			g.fillText('Scores: '+gamestate.scores[0] + ' - ' + gamestate.scores[1],100,130);
+		}));
 
+		function draw(g,next) {
+			var player = getPlayer();
+			if (!player) { return; }
+
+			g.clear();
+			//g.drawImage(field,0,0,800,600,0,0,800,600);
+
+
+			var drawHistory = Math.min(1,simulator.timeframes.length);
+			for(var i=drawHistory-1;i>=0;i--) {
+				var timeframe = simulator.timeframes[i];
+				g.context.globalAlpha = 1-(i/drawHistory);
+
+				// Draw player shadows
+				drawMultiple(g,timeframe.gamestate.players,drawPlayerShadow);
+
+				// Draw ball shadow
+				drawBallShadow(g,timeframe.gamestate.ball);
+
+				// Draw player bodies
+				drawMultiple(g,timeframe.gamestate.players,drawPlayer);
+
+				// Draw ball
+				drawBall(g,timeframe.gamestate.ball);
+			}
+			if (networkClient.status !== NetworkClient.STATUS_ACTIVE) {
+				console.log('NOT ACTIVE!');
+				g.fillStyle('black');
+				g.fillRectangle(0,0,800,600);
+				g.fillStyle(white);
+			}
+			hud.draw();
+			debug.draw();
 			next(g);
 		}
 		return me;
