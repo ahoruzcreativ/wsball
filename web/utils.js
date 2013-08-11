@@ -61,17 +61,17 @@ define([],function() {
 		} else if (typeof value === 'string') {
 			return value;
 		} else if (typeof value === 'number') {
-			// We need to make sure number values are not just
-			// rounded by 'toString', we need the absolute exact value.
-			// The EMCA specifications say it should be a double, so
-			// an 8-byte float.
-			var buffer = new ArrayBuffer(8);
-			var floatView = new Float64Array(buffer);
-			floatView[0] = value;
-			var intView = new Int32Array(buffer);
-			var a = intView[0];
-			var b = intView[1];
-			return {'@t':'f','@va':i,'@vb':b};
+			// // We need to make sure number values are not just
+			// // rounded by 'toString', we need the absolute exact value.
+			// // The EMCA specifications say it should be a double, so
+			// // an 8-byte float.
+			// var buffer = new ArrayBuffer(8);
+			// var floatView = new Float64Array(buffer);
+			// floatView[0] = value;
+			// var intView = new Int32Array(buffer);
+			// var a = intView[0];
+			// var b = intView[1];
+			// return {'@t':'f','@va':i,'@vb':b};
 		}
 		return value;
 	}
@@ -81,16 +81,16 @@ define([],function() {
 		return JSON.parse(str,JSONreviver);
 	}
 	function JSONreviver(key,value) {
-		if (value !== null && typeof value === 'object') {
-			if (value['@t'] === 'f') {
-				var buffer = new ArrayBuffer(8);
-				var intView = new Int32Array(buffer);
-				intView[0] = value['@va'];
-				intView[1] = value['@vb'];
-				var floatView = new Float64Array(buffer);
-				return floatView[0];
-			}
-		}
+		// if (value !== null && typeof value === 'object') {
+		// 	if (value['@t'] === 'f') {
+		// 		var buffer = new ArrayBuffer(8);
+		// 		var intView = new Int32Array(buffer);
+		// 		intView[0] = value['@va'];
+		// 		intView[1] = value['@vb'];
+		// 		var floatView = new Float64Array(buffer);
+		// 		return floatView[0];
+		// 	}
+		// }
 		return value;
 	}
 
