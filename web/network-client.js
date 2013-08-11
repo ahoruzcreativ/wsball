@@ -42,10 +42,21 @@ define(['./utils'],function(utils) {
 
 		this.syninterval = setInterval(synchronizeTime.bind(this),1000);
 	}
+
+	var lastResetId = null;
+	var newResetId = 1;
 	function handleReset(msg) {
-		console.log('!RESET:',msg.timeframes[0].gamestate.frame,msg.timeframes[msg.timeframes.length-1].gamestate.frame);
+		if (lastResetId && msg.resetId !== lastResetId) {
+			console.log('!RESET: Too old',msg.resetId, lastResetId);
+			return;
+		}
+		lastResetId = null;
+
+		var simulator = this.simulator;
+		console.log('!RESET:','to frame',msg.currentframe,'using frame',msg.state.frame,'and',msg.events.length,'events');
 		this.status = NetworkClient.STATUS_ACTIVE;
-		this.simulator.resetToTimeFrames(msg.timeframes,msg.futureEvents);
+		simulator.resetState(msg.state, msg.events);
+		simulator.fastForward(msg.currentframe);
 		clearTimeout(this.gameupdateTimeout);
 		this.update();
 	}
