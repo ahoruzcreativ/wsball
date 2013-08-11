@@ -58,7 +58,7 @@ define(['./utils'],function(utils) {
 				// Remove old timeframes
 				while (this.timeframes.length > this.maxFramesInHistory) {
 					var timeframe = this.timeframes.pop();
-					utils.debug('!STATE:',timeframe.gamestate.frame,utils.hashCode(utils.JSONstringify(timeframe.gamestate)));
+					utils.debug('!STATE:',timeframe.gamestate.frame,utils.JSONstringify(timeframe.gamestate));
 					timeframe.events.forEach(function(event) {
 						utils.debug('!EVENT:',timeframe.gamestate.frame,utils.JSONstringify(event));
 					});
@@ -66,9 +66,11 @@ define(['./utils'],function(utils) {
 			}
 		};
 		p.fastForward = function(frame) {
+			utils.debug('!FASTFORWARD: from frame',this.getCurrentFrame(),'to frame',frame);
 			while(this.getCurrentFrame() < frame) {
 				this.updateGame();
 			}
+			utils.debug('!FASTFORWARDED: to frame',this.getCurrentFrame());
 		};
 		p.pushEvent = function(event) {
 			this.insertEvent(this.getCurrentFrame(),event);
