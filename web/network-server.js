@@ -48,8 +48,9 @@ define(['./utils'],function(utils) {
 			client.messenger.send({
 				type: 'initialize',
 				clientid: client.id,
-				timeframes: this.simulator.timeframes,
-				futureEvents: this.simulator.futureEvents
+				state: this.simulator.getOldestState(),
+				events: this.simulator.getEvents(),
+				currentframe: this.simulator.getLastFrame()
 			});
 
 			messenger.onmessage = handleMessage.bind(client);
@@ -148,23 +149,10 @@ define(['./utils'],function(utils) {
 		p.sendReset = function() {
 			console.log('!SENDRESET: to client',this.id,'to frame',this.server.simulator.getLastFrame());
 			var simulator = this.server.simulator;
-			var events = [];
-			for(var i=simulator.timeframes.length-1;i>=0;i--) {
-				var timeframe = simulator.timeframes[i];
-				timeframe.events.forEach(function(e) {
-					events.push({
-						frame: timeframe.gamestate.frame,
-						event: e
-					});
-				});
-			}
-			simulator.futureEvents.forEach(function(fe) {
-				events.push(fe);
-			});
 			console.log('!SENDRESET: to client',
 				this.id,
 				'with frame',
-				simulator.timeframes[simulator.timeframes.length-1].gamestate.frame,
+				simulator.getOldestState().frame,
 				'with',
 				events.length,
 				'events',
@@ -174,8 +162,8 @@ define(['./utils'],function(utils) {
 			this.messenger.send({
 				type: 'reset',
 				currentframe: simulator.getLastFrame(),
-				state: simulator.timeframes[simulator.timeframes.length-1].gamestate,
-				events: events
+				state: simulator.getOldestState(),
+				events: simulator.getEvents()
 			});
 			this.status = Client.STATUS_ACTIVE;
 		};

@@ -33,7 +33,8 @@ define(['./utils'],function(utils) {
 	function handleInitialize(msg) {
 		this.clientid = msg.clientid;
 
-		this.simulator.resetToTimeFrames(msg.timeframes,msg.futureEvents);
+		this.simulator.resetState(msg.state,msg.events);
+		this.simulator.fastForward(msg.currentframe);
 
 		console.log('Initialized');
 		this.status = NetworkClient.STATUS_ACTIVE;

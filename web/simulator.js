@@ -129,6 +129,23 @@ define(['./utils'],function(utils) {
 			}
 		};
 
+		p.getEvents = function() {
+			var events = [];
+			for(var i=this.timeframes.length-1;i>=0;i--) {
+				var timeframe = this.timeframes[i];
+				timeframe.events.forEach(function(e) {
+					events.push({
+						frame: timeframe.gamestate.frame,
+						event: e
+					});
+				});
+			}
+			this.futureEvents.forEach(function(fe) {
+				events.push(fe);
+			});
+			return events;
+		};
+
 		// Returns whether the frame is before known history.
 		p.isFramePrehistoric = function(frame) {
 			return frame < this.timeframes[this.timeframes.length-1].gamestate.frame;
@@ -144,6 +161,9 @@ define(['./utils'],function(utils) {
 		};
 		p.getLastFrame = function() {
 			return this.getLastTimeFrame().gamestate.frame;
+		};
+		p.getOldestState = function() {
+			return this.timeframes[this.timeframes.length-1].gamestate;
 		};
 		function addSorted(arr,item,compare) {
 			var i;
