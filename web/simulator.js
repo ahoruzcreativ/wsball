@@ -54,6 +54,7 @@ define(['./utils'],function(utils) {
 				addSorted(this.timeframes[0].events,futureEvent.event,this.game.compareEvents);
 			}
 
+			// Only remove frames is maxFramesInHistory is enabled.
 			if (this.maxFramesInHistory >= 0) {
 				// Remove old timeframes
 				while (this.timeframes.length > this.maxFramesInHistory) {
@@ -87,7 +88,7 @@ define(['./utils'],function(utils) {
 					frame: frame,
 					event: event
 				});
-			} else if (frameIndex < this.timeframes.length) { // Event of current frame or the past?
+			} else if (frameIndex < this.timeframes.length) { // Event of current frame or the memorized past?
 				var timeframe = this.getTimeFrame(frame);
 				addSorted(timeframe.events,event,this.game.compareEvents);
 				this.recalculateGameStates(frame);
