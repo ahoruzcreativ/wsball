@@ -1,3 +1,9 @@
+// Simulator
+// Simulates a game and holds a history of previous simulations and their inputs.
+// Simulator holds a list of known history in 'this.timeframes'.
+// Each timeframe holds the state of the game and the events that have occured that frame.
+// A new state is calculated from the state and events of the previous timeframe.
+
 define(['./utils'],function(utils) {
 	/** @constructor */
 	function Simulator(game) {
@@ -36,6 +42,9 @@ define(['./utils'],function(utils) {
 		p.nextGameStateFromTimeFrame = function(timeframe) {
 			return this.game.update(timeframe.gamestate, timeframe.events);
 		};
+
+		// Increments the game one frame.
+		// The latest state and events are taken and a new timeframe is calculated using the update function from game.
 		p.updateGame = function() {
 			// Calculate new timeframe
 			var curtimeframe = this.timeframes[0];
@@ -76,6 +85,11 @@ define(['./utils'],function(utils) {
 		p.pushEvent = function(event) {
 			this.insertEvent(this.getCurrentFrame(),event);
 		};
+		
+		// Adds the specified event into the specified frame.
+		// If frame is in the future, it will be added to futureEvents.
+		// If frame is in known history it will be inserted into that frame and trailing frames will be re-simulated.
+		// If frame is prehistoric an error will be thrown.
 		p.insertEvent = function(frame,event) {
 			utils.assert(event);
 			var frameIndex = this.getLastTimeFrame().gamestate.frame - frame;
@@ -115,6 +129,9 @@ define(['./utils'],function(utils) {
 				utils.assert(this.timeframes[0].gamestate.frame === (this.timeframes[1].gamestate.frame+1));
 			}
 		};
+
+		// Resets the whole simulator state to the specified state and set its futureEvents.
+		// Use this in conjuction with fastForward to also simulate the specified events.
 		p.resetState = function(state,futureEvents) {
 			console.log('!RESET to state with frame',state.frame,'and',futureEvents.length,'future events');
 
@@ -130,6 +147,8 @@ define(['./utils'],function(utils) {
 				this.insertEvent(futureEvents[i].frame, futureEvents[i].event);
 			}
 		};
+
+		// Returns whether the frame is before known history.
 		p.isFramePrehistoric = function(frame) {
 			return frame < this.timeframes[this.timeframes.length-1].gamestate.frame;
 		};
