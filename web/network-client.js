@@ -57,6 +57,7 @@ define(['./utils'],function(utils) {
 		var roundtripFrames = now - msg.oframe;
 		var clientFrames = msg.oframe + roundtripFrames*0.5;
 		var framesDifference = clientFrames - msg.nframe;
+		this.simulator.disposeTimeFramesBefore(msg.stableframe);
 
 		if (-framesDifference >= this.simulator.maxFramesInHistory) {
 			// We're too far behind compared to the server, so we

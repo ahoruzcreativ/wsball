@@ -19,6 +19,7 @@ define(['./utils'],function(utils) {
 		};
 		this.defaultgamerate = 1000*(1/30);
 		this.gameupdateTimeout = setTimeout(update.bind(this), this.defaultgamerate);
+		this.stableframe = 0;
 	}
 	function update() {
 		this.simulator.updateGame();
@@ -74,6 +75,16 @@ define(['./utils'],function(utils) {
 				client.messenger.send(msg);
 			});
 		};
+		p.recalculateStableFrame = function() {
+			this.stableframe = this.clients
+				.map(function(client) {
+					return client.lastframe;
+				})
+				.reduce(function(a,b) {
+					return Math.min(a,b);
+				}, Infinity);
+			this.simulator.disposeTimeFramesBefore(this.stableframe);
+		};
 		p.close = function() {
 			clearTimeout(this.gameupdateTimeout);
 		};
@@ -92,12 +103,14 @@ define(['./utils'],function(utils) {
 	}
 
 	function handleSyn(msg) {
+		this.lastframe = msg.frame;
+		this.server.recalculateStableFrame();
 		this.messenger.send({
 			type: 'ack',
 			oframe: msg.frame,
-			nframe: this.server.simulator.getLastFrame()
+			nframe: this.server.simulator.getLastFrame(),
+			stableframe: this.server.stableframe
 		});
-		this.lastframe = msg.frame;
 	}
 	function handleAck(msg) {
 		this.latency = msg.latency;

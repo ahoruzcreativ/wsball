@@ -11,7 +11,7 @@ define(['./utils'],function(utils) {
 	}
 
 	// No maximum of frames: handle frame removal yourself.
-	Simulator.defaultMaxFramesInHistory = 10;
+	Simulator.defaultMaxFramesInHistory = -1;
 
 	(function(p) {
 		p.getTimeFrame = function(frame) {
@@ -26,6 +26,11 @@ define(['./utils'],function(utils) {
 				var timeframe = this.getTimeFrame(frame);
 				var newGameState = this.nextGameStateFromTimeFrame(timeframe);
 				this.getTimeFrame(frame+1).gamestate = newGameState;
+			}
+		};
+		p.disposeTimeFramesBefore = function(frame) {
+			while (this.timeframes[this.timeframes.length-1].gamestate.frame < frame) {
+				this.timeframes.pop();
 			}
 		};
 		p.nextGameStateFromTimeFrame = function(timeframe) {

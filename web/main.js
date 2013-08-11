@@ -472,6 +472,7 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 			g.fillText('latencySolving: '+round(networkClient.latencySolving),100,110);
 			g.fillText('Latency: '+round(networkClient.latencyMs),100,120);
 			g.fillText('Scores: '+gamestate.scores[0] + ' - ' + gamestate.scores[1],100,130);
+			g.fillText('FrameBuffer: '+simulator.timeframes.length,100,140);
 		}));
 
 		function draw(g,next) {
