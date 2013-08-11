@@ -43,15 +43,7 @@ define(['./utils'],function(utils) {
 		this.syninterval = setInterval(synchronizeTime.bind(this),1000);
 	}
 
-	var lastResetId = null;
-	var newResetId = 1;
 	function handleReset(msg) {
-		if (lastResetId && msg.resetId !== lastResetId) {
-			console.log('!RESET: Too old',msg.resetId, lastResetId);
-			return;
-		}
-		lastResetId = null;
-
 		var simulator = this.simulator;
 		console.log('!RESET:','to frame',msg.currentframe,'using frame',msg.state.frame,'and',msg.events.length,'events');
 		this.status = NetworkClient.STATUS_ACTIVE;
