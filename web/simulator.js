@@ -112,6 +112,21 @@ define(['./utils'],function(utils) {
 				utils.assert(this.timeframes[0].gamestate.frame === (this.timeframes[1].gamestate.frame+1));
 			}
 		};
+		p.resetState = function(state,futureEvents) {
+			console.log('!RESET to state with frame',state.frame,'and',futureEvents.length,'future events');
+
+			// Reset timeframes
+			this.timeframes.length = 0;
+			this.timeframes.unshift({
+				events: [],
+				gamestate: state
+			});
+
+			// Reset futureEvents
+			for(var i=0;i<futureEvents.length;i++) {
+				this.insertEvent(futureEvents[i].frame, futureEvents[i].event);
+			}
+		};
 		p.isFramePrehistoric = function(frame) {
 			return frame < this.timeframes[this.timeframes.length-1].gamestate.frame;
 		};
