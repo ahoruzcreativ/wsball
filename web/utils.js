@@ -96,6 +96,7 @@ define([],function() {
 
 
 	return {
+		debug: debug,
 		findIndex: findIndex,
 		contains: contains,
 		remove: remove,
