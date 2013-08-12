@@ -57,15 +57,15 @@ define(['./utils'],function(utils) {
 		return frames*(1000/30);
 	}
 	function handleAck(msg) {
-		var now = this.simulator.getLastMoment().state.frame;
+		var now = this.simulator.getCurrentFrame();
 		var roundtripFrames = now - msg.oframe;
 		var clientFrames = msg.oframe + roundtripFrames*0.5;
 		var framesDifference = clientFrames - msg.nframe;
-		this.simulator.disposeMomentsBefore(msg.stableframe);
+		this.simulator.forgetMomentsBefore(msg.stableframe);
 
-		if (-framesDifference >= this.simulator.maxFramesInHistory) {
-			// We're too far behind compared to the server, so we
-			// need to fast-forward to the frame of the server
+		if (-framesDifference >= 30) {
+			// We're too far behind compared to the server (1 second),
+			// so we need to fast-forward to the frame of the server.
 
 			// This can happen when frames aren't being updated by
 			// the game. In browsers this can happen when the tab
@@ -101,7 +101,7 @@ define(['./utils'],function(utils) {
 	function synchronizeTime() {
 		this.messenger.send({
 			type: 'syn',
-			frame: this.simulator.getLastMoment().state.frame
+			frame: this.simulator.getCurrentFrame()
 		});
 	}
 	function stop() {

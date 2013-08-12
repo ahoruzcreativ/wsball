@@ -174,7 +174,7 @@ app.ws.usepath('/rooms',function(req,next) {
 app.listen(8085);
 
 function update() {
-	var tf = simulator.getLastMoment();
+	var tf = simulator.getCurrentMoment();
 	process.stdout.write('\r' + [
 		'@'+tf.state.frame,
 		'!'+simulator.futureEvents.length,
@@ -187,14 +187,14 @@ function update() {
 		].join(' '));
 	updateGame();
 
-	// Trim moments that will never be used (the oldest moment in use by clients)
+	// Trim moments that will never be used (the oldest moment in use by any client)
 	var minimalframe = clients.reduce(function(prev,client) {
 		return client.lastframe < prev ? client.lastframe : prev;
-	},simulator.getLastFrame());
+	},simulator.getCurrentFrame());
 	while (simulator.moments.length > 0 && simulator.moments[simulator.moments.length-1].state.frame < minimalframe) {
 		simulator.moments.pop();
 	}
-	/*var curframe = getLastMoment().state.frame;
+	/*var curframe = getCurrentMoment().state.frame;
 	clients.forEach(function(client) {
 		if (curframe - client.lastsyn < 30) { return; }
 		client.lastsyn = curframe;

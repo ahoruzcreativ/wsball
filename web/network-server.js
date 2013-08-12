@@ -32,25 +32,25 @@ define(['./utils'],function(utils) {
 			client.id = this.newclientid++;
 			client.server = this;
 			client.messenger = messenger;
-			client.lastframe = this.simulator.getLastFrame();
+			client.lastframe = this.simulator.getCurrentFrame();
 			this.clients.push(client);
 
 			// Initialize client.
-			this.simulator.getLastMoment().events.push({
+			this.simulator.pushEvent({
 				type: 'connect',
 				clientid: client.id
 			});
 			client.broadcast({
 				type: 'connect',
 				clientid: client.id,
-				frame: this.simulator.getLastFrame()
+				frame: this.simulator.getCurrentFrame()
 			});
 			client.messenger.send({
 				type: 'initialize',
 				clientid: client.id,
 				state: this.simulator.getOldestState(),
 				events: this.simulator.getEvents(),
-				currentframe: this.simulator.getLastFrame()
+				currentframe: this.simulator.getCurrentFrame()
 			});
 
 			messenger.onmessage = handleMessage.bind(client);
@@ -84,7 +84,7 @@ define(['./utils'],function(utils) {
 				.reduce(function(a,b) {
 					return Math.min(a,b);
 				}, Infinity);
-			this.simulator.disposeMomentsBefore(this.stableframe);
+			this.simulator.forgetMomentsBefore(this.stableframe);
 		};
 		p.close = function() {
 			clearTimeout(this.gameupdateTimeout);
@@ -109,7 +109,7 @@ define(['./utils'],function(utils) {
 		this.messenger.send({
 			type: 'ack',
 			oframe: msg.frame,
-			nframe: this.server.simulator.getLastFrame(),
+			nframe: this.server.simulator.getCurrentFrame(),
 			stableframe: this.server.stableframe
 		});
 	}
@@ -122,14 +122,14 @@ define(['./utils'],function(utils) {
 	}
 	function handleDisconnect() {
 		var simulator = this.server.simulator;
-		simulator.getLastMoment().events.push({
+		simulator.pushEvent({
 			type: 'disconnect',
 			clientid: this.id
 		});
 		this.broadcast({
 			type: 'disconnect',
 			clientid: this.id,
-			frame: simulator.getLastMoment().state.frame
+			frame: simulator.getCurrentMoment().state.frame
 		});
 		this.server.removeClient(this);
 		console.log('disconnected');
@@ -147,7 +147,7 @@ define(['./utils'],function(utils) {
 			}
 		};
 		p.sendReset = function() {
-			console.log('!SENDRESET: to client',this.id,'to frame',this.server.simulator.getLastFrame());
+			console.log('!SENDRESET: to client',this.id,'to frame',this.server.simulator.getCurrentFrame());
 			var simulator = this.server.simulator;
 			console.log('!SENDRESET: to client',
 				this.id,
@@ -157,11 +157,11 @@ define(['./utils'],function(utils) {
 				events.length,
 				'events',
 				'to be reset to frame',
-				simulator.getLastFrame()
+				simulator.getCurrentFrame()
 			);
 			this.messenger.send({
 				type: 'reset',
-				currentframe: simulator.getLastFrame(),
+				currentframe: simulator.getCurrentFrame(),
 				state: simulator.getOldestState(),
 				events: simulator.getEvents()
 			});

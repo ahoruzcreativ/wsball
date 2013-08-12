@@ -146,7 +146,7 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 		}
 
 		function getPlayer() {
-			return simulator.getLastMoment().state.players.filter(function(player) {
+			return simulator.getCurrentState().players.filter(function(player) {
 				return player.clientid === networkClient.clientid
 			})[0];
 		}
@@ -189,7 +189,7 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 		var counter = 0;
 		function inputEvent(event) {
 			if (networkClient.status !== NetworkClient.STATUS_ACTIVE) { return; }
-			var moment = simulator.getLastMoment();
+			var moment = simulator.getCurrentMoment();
 			simulator.pushEvent(Object.merge({
 				clientid: networkClient.clientid
 			},event));
@@ -453,7 +453,7 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 		}));
 		var hud = overlay(createCanvas(800,600,function(g) {
 			g.clear();
-			var state = simulator.getLastMoment().state;
+			var state = simulator.getCurrentState();
 
 			g.context.font = 'bold 42pt arial';
 
@@ -464,7 +464,7 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 		}));
 
 		var debug = overlay(createCanvas(200,300,function(g) {
-			var state = simulator.getLastMoment().state;
+			var state = simulator.getCurrentState();
 			g.clear();
 			// Draw HUD
 			g.fillStyle('white');
