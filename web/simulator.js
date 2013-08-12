@@ -45,7 +45,7 @@ define(['./utils'],function(utils) {
 
 		// Increments the game one frame.
 		// The latest state and events are taken and a new moment is calculated using the update function from game.
-		p.updateGame = function() {
+		p.advanceToNextMoment = function() {
 			// Calculate new moment
 			var newstate = this.nextStateFromMoment(this.getCurrentMoment());
 			this.moments.unshift({
@@ -75,7 +75,7 @@ define(['./utils'],function(utils) {
 		p.fastForward = function(frame) {
 			utils.debug('!FASTFORWARD: from frame',this.getCurrentFrame(),'to frame',frame);
 			while(this.getCurrentFrame() < frame) {
-				this.updateGame();
+				this.advanceToNextMoment();
 			}
 			utils.debug('!FASTFORWARDED: to frame',this.getCurrentFrame());
 		};

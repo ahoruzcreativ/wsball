@@ -22,7 +22,7 @@ define(['./utils'],function(utils) {
 		this.stableframe = 0;
 	}
 	function update() {
-		this.simulator.updateGame();
+		this.simulator.advanceToNextMoment();
 		this.gameupdateTimeout = setTimeout(update.bind(this), this.defaultgamerate);
 	}
 	(function(p) {

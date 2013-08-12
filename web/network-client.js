@@ -96,7 +96,7 @@ define(['./utils'],function(utils) {
 			}
 		}
 		this.gameupdateTimeout = setTimeout(update.bind(this),this.defaultgamerate+this.latencySolving);
-		this.simulator.updateGame();
+		this.simulator.advanceToNextMoment();
 	}
 	function synchronizeTime() {
 		this.messenger.send({
