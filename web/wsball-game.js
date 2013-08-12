@@ -89,22 +89,22 @@ define(['./utils','./vector','./linesegment'],function(utils,Vector,LineSegment)
 		]
 	};
 	var fieldpositions = [300,350,250,400,200];
-	function getPlayerIndex(gamestate,player) {
+	function getPlayerIndex(state,player) {
 		var index = 0;
-		var players = gamestate.players;
+		var players = state.players;
 		for(var i=0;i<players.length;i++) {
 			var p = players[i];
 			if (p === player) { return index; }
 			if (p.team === player.team) { index++; }
 		}
 	}
-	function positionPlayer(gamestate,player) {
-		var nr = getPlayerIndex(gamestate,player);
+	function positionPlayer(state,player) {
+		var nr = getPlayerIndex(state,player);
 		player.x = 400 + 200*(player.team === 0 ? -1 : 1) + Math.floor(nr/fieldpositions.length)*50;
 		player.y = fieldpositions[nr%5];
 	}
-	function reset(gamestate) {
-		var gs = gamestate;
+	function reset(state) {
+		var gs = state;
 		gs.players.forEach(function(player) {
 			positionPlayer(gs,player);
 			player.vx = 0;
@@ -123,17 +123,17 @@ define(['./utils','./vector','./linesegment'],function(utils,Vector,LineSegment)
 			ball: {x:400,y:300,vx:0,vy:0}
 		};
 	}
-	function updateGame(gamestate,events) {
+	function updateGame(state,events) {
 		var t = new Vector();
 		var t2 = new Vector();
 
 
-		var og = gamestate;
+		var og = state;
 		var playerLookup = {};
 
 		utils.assert(og.scores);
 
-		// Create new gamestate from old gamestate.
+		// Create new state from old state.
 		var ng = {
 			frame: og.frame+1,
 
@@ -201,7 +201,7 @@ define(['./utils','./vector','./linesegment'],function(utils,Vector,LineSegment)
 			}
 		}
 
-		// Handle gameplay on new gamestate.
+		// Handle gameplay on new state.
 		ng.ball.x += ng.ball.vx;
 		ng.ball.y += ng.ball.vy;
 		ng.ball.vx *= 0.95;

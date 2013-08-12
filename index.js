@@ -107,8 +107,8 @@ function handleKeyMsg(msg) {
 		key: msg.key,
 		countid: msg.countid
 	});
-	if (msg.frame < simulator.moments[simulator.moments.length-1].gamestate.frame) {
-		msg.frame = simulator.moments[simulator.moments.length-1].gamestate.frame;
+	if (msg.frame < simulator.moments[simulator.moments.length-1].state.frame) {
+		msg.frame = simulator.moments[simulator.moments.length-1].state.frame;
 		console.log('Detected old message from client',this.id);
 		sendReset();
 	}
@@ -176,12 +176,12 @@ app.listen(8085);
 function update() {
 	var tf = simulator.getLastMoment();
 	process.stdout.write('\r' + [
-		'@'+tf.gamestate.frame,
+		'@'+tf.state.frame,
 		'!'+simulator.futureEvents.length,
 		'|'+simulator.moments.length,
-		':'+tf.gamestate.players.length,
+		':'+tf.state.players.length,
 		'*'+tf.events.length,
-		tf.gamestate.players.map(function(player) {
+		tf.state.players.map(function(player) {
 			return '('+Math.round(player.x)+','+Math.round(player.y)+')';
 		}).join(' ')
 		].join(' '));
@@ -191,10 +191,10 @@ function update() {
 	var minimalframe = clients.reduce(function(prev,client) {
 		return client.lastframe < prev ? client.lastframe : prev;
 	},simulator.getLastFrame());
-	while (simulator.moments.length > 0 && simulator.moments[simulator.moments.length-1].gamestate.frame < minimalframe) {
+	while (simulator.moments.length > 0 && simulator.moments[simulator.moments.length-1].state.frame < minimalframe) {
 		simulator.moments.pop();
 	}
-	/*var curframe = getLastMoment().gamestate.frame;
+	/*var curframe = getLastMoment().state.frame;
 	clients.forEach(function(client) {
 		if (curframe - client.lastsyn < 30) { return; }
 		client.lastsyn = curframe;

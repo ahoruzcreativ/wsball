@@ -10,7 +10,7 @@ define(['./utils'],function(utils) {
 		this.futureEvents = [];
 		this.moments = [{
 			events: [],
-			gamestate: game.init()
+			state: game.init()
 		}];
 		this.game = game;
 		this.maxFramesInHistory = Simulator.defaultMaxFramesInHistory;
@@ -21,26 +21,26 @@ define(['./utils'],function(utils) {
 
 	(function(p) {
 		p.getMoment = function(frame) {
-			var frameIndex = this.moments[0].gamestate.frame - frame;
-			utils.assert(frameIndex >= 0, 'The frame '+frame+' was newer than the last frame '+this.moments[0].gamestate.frame);
+			var frameIndex = this.moments[0].state.frame - frame;
+			utils.assert(frameIndex >= 0, 'The frame '+frame+' was newer than the last frame '+this.moments[0].state.frame);
 			utils.assert(frameIndex < this.moments.length, 'The frame '+frame+' was too old! (max '+this.moments.length+')');
 			return this.moments[frameIndex];
 		};
-		p.recalculateGameStates = function(fromframe) {
-			var now = this.moments[0].gamestate.frame;
+		p.recalculateStates = function(fromframe) {
+			var now = this.moments[0].state.frame;
 			for(var frame=fromframe;frame<now;frame++) {
 				var moment = this.getMoment(frame);
-				var newGameState = this.nextGameStateFromMoment(moment);
-				this.getMoment(frame+1).gamestate = newGameState;
+				var newState = this.nextStateFromMoment(moment);
+				this.getMoment(frame+1).state = newState;
 			}
 		};
 		p.disposeMomentsBefore = function(frame) {
-			while (this.moments.length > 1 && this.moments[this.moments.length-1].gamestate.frame < frame) {
+			while (this.moments.length > 1 && this.moments[this.moments.length-1].state.frame < frame) {
 				this.moments.pop();
 			}
 		};
-		p.nextGameStateFromMoment = function(moment) {
-			return this.game.update(moment.gamestate, moment.events);
+		p.nextStateFromMoment = function(moment) {
+			return this.game.update(moment.state, moment.events);
 		};
 
 		// Increments the game one frame.
@@ -48,16 +48,16 @@ define(['./utils'],function(utils) {
 		p.updateGame = function() {
 			// Calculate new moment
 			var curmoment = this.moments[0];
-			var curgamestate = curmoment.gamestate;
+			var curstate = curmoment.state;
 			var curevents = curmoment.events;
-			var newgamestate = this.game.update(curgamestate,curevents);
+			var newstate = this.game.update(curstate,curevents);
 			this.moments.unshift({
 				events: [],
-				gamestate: newgamestate
+				state: newstate
 			});
 
 			// Place (previously) future events in the new moment if they were destined to be in that frame.
-			while (this.futureEvents.length > 0 && newgamestate.frame === this.futureEvents[0].frame) {
+			while (this.futureEvents.length > 0 && newstate.frame === this.futureEvents[0].frame) {
 				var futureEvent = this.futureEvents.shift();
 
 				addSorted(this.moments[0].events,futureEvent.event,this.game.compareEvents);
@@ -68,9 +68,9 @@ define(['./utils'],function(utils) {
 				// Remove old moments
 				while (this.moments.length > this.maxFramesInHistory) {
 					var moment = this.moments.pop();
-					utils.debug('!STATE:',moment.gamestate.frame,utils.JSONstringify(moment.gamestate));
+					utils.debug('!STATE:',moment.state.frame,utils.JSONstringify(moment.state));
 					moment.events.forEach(function(event) {
-						utils.debug('!EVENT:',moment.gamestate.frame,utils.JSONstringify(event));
+						utils.debug('!EVENT:',moment.state.frame,utils.JSONstringify(event));
 					});
 				}
 			}
@@ -92,7 +92,7 @@ define(['./utils'],function(utils) {
 		// If frame is prehistoric an error will be thrown.
 		p.insertEvent = function(frame,event) {
 			utils.assert(event);
-			var frameIndex = this.getLastMoment().gamestate.frame - frame;
+			var frameIndex = this.getLastMoment().state.frame - frame;
 			if (frameIndex < 0) { // Event in the future?
 				var index = utils.findIndex(this.futureEvents, function(futureEvent) {
 					return frame < futureEvent.frame;
@@ -105,7 +105,7 @@ define(['./utils'],function(utils) {
 			} else if (frameIndex < this.moments.length) { // Event of current frame or the memorized past?
 				var moment = this.getMoment(frame);
 				addSorted(moment.events,event,this.game.compareEvents);
-				this.recalculateGameStates(frame);
+				this.recalculateStates(frame);
 			} else {
 				throw new Error('The inserted frame is prehistoric: it is too old to simulate');
 			}
@@ -120,7 +120,7 @@ define(['./utils'],function(utils) {
 			this.moments.length = 0;
 			this.moments.unshift({
 				events: [],
-				gamestate: state
+				state: state
 			});
 
 			// Reset futureEvents
@@ -135,7 +135,7 @@ define(['./utils'],function(utils) {
 				var moment = this.moments[i];
 				moment.events.forEach(function(e) {
 					events.push({
-						frame: moment.gamestate.frame,
+						frame: moment.state.frame,
 						event: e
 					});
 				});
@@ -148,22 +148,22 @@ define(['./utils'],function(utils) {
 
 		// Returns whether the frame is before known history.
 		p.isFramePrehistoric = function(frame) {
-			return frame < this.moments[this.moments.length-1].gamestate.frame;
+			return frame < this.moments[this.moments.length-1].state.frame;
 		};
-		p.getCurrentGameState = function() {
-			return this.moments[0].gamestate;
+		p.getCurrentState = function() {
+			return this.moments[0].state;
 		};
 		p.getCurrentFrame = function() {
-			return this.moments[0].gamestate.frame;
+			return this.moments[0].state.frame;
 		};
 		p.getLastMoment = function() {
 			return this.moments[0];
 		};
 		p.getLastFrame = function() {
-			return this.getLastMoment().gamestate.frame;
+			return this.getLastMoment().state.frame;
 		};
 		p.getOldestState = function() {
-			return this.moments[this.moments.length-1].gamestate;
+			return this.moments[this.moments.length-1].state;
 		};
 		function addSorted(arr,item,compare) {
 			var i;

@@ -57,7 +57,7 @@ define(['./utils'],function(utils) {
 		return frames*(1000/30);
 	}
 	function handleAck(msg) {
-		var now = this.simulator.getLastMoment().gamestate.frame;
+		var now = this.simulator.getLastMoment().state.frame;
 		var roundtripFrames = now - msg.oframe;
 		var clientFrames = msg.oframe + roundtripFrames*0.5;
 		var framesDifference = clientFrames - msg.nframe;
@@ -101,7 +101,7 @@ define(['./utils'],function(utils) {
 	function synchronizeTime() {
 		this.messenger.send({
 			type: 'syn',
-			frame: this.simulator.getLastMoment().gamestate.frame
+			frame: this.simulator.getLastMoment().state.frame
 		});
 	}
 	function stop() {

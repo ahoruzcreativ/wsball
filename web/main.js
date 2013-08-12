@@ -146,7 +146,7 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 		}
 
 		function getPlayer() {
-			return simulator.getLastMoment().gamestate.players.filter(function(player) {
+			return simulator.getLastMoment().state.players.filter(function(player) {
 				return player.clientid === networkClient.clientid
 			})[0];
 		}
@@ -194,7 +194,7 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 				clientid: networkClient.clientid
 			},event));
 			messenger.send(Object.merge({
-				frame: moment.gamestate.frame
+				frame: moment.state.frame
 			},event));
 		}
 		function keydown(key) {
@@ -453,25 +453,25 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 		}));
 		var hud = overlay(createCanvas(800,600,function(g) {
 			g.clear();
-			var gamestate = simulator.getLastMoment().gamestate;
+			var state = simulator.getLastMoment().state;
 
 			g.context.font = 'bold 42pt arial';
 
-			drawBigText(g,gamestate.scores[0].toString(), white, 300,42);
+			drawBigText(g,state.scores[0].toString(), white, 300,42);
 			drawBigText(g,'-', white, 400,42);
-			drawBigText(g,gamestate.scores[1].toString(), white, 500,42);
+			drawBigText(g,state.scores[1].toString(), white, 500,42);
 
 		}));
 
 		var debug = overlay(createCanvas(200,300,function(g) {
-			var gamestate = simulator.getLastMoment().gamestate;
+			var state = simulator.getLastMoment().state;
 			g.clear();
 			// Draw HUD
 			g.fillStyle('white');
-			g.fillText('Frame:  '+gamestate.frame,100,100);
+			g.fillText('Frame:  '+state.frame,100,100);
 			g.fillText('latencySolving: '+round(networkClient.latencySolving),100,110);
 			g.fillText('Latency: '+round(networkClient.latencyMs),100,120);
-			g.fillText('Scores: '+gamestate.scores[0] + ' - ' + gamestate.scores[1],100,130);
+			g.fillText('Scores: '+state.scores[0] + ' - ' + state.scores[1],100,130);
 			g.fillText('FrameBuffer: '+simulator.moments.length,100,140);
 		}));
 
@@ -489,16 +489,16 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 				g.context.globalAlpha = 1-(i/drawHistory);
 
 				// Draw player shadows
-				drawMultiple(g,moment.gamestate.players,drawPlayerShadow);
+				drawMultiple(g,moment.state.players,drawPlayerShadow);
 
 				// Draw ball shadow
-				drawBallShadow(g,moment.gamestate.ball);
+				drawBallShadow(g,moment.state.ball);
 
 				// Draw player bodies
-				drawMultiple(g,moment.gamestate.players,drawPlayer);
+				drawMultiple(g,moment.state.players,drawPlayer);
 
 				// Draw ball
-				drawBall(g,moment.gamestate.ball);
+				drawBall(g,moment.state.ball);
 			}
 			if (networkClient.status !== NetworkClient.STATUS_ACTIVE) {
 				console.log('NOT ACTIVE!');

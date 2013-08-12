@@ -129,7 +129,7 @@ define(['./utils'],function(utils) {
 		this.broadcast({
 			type: 'disconnect',
 			clientid: this.id,
-			frame: simulator.getLastMoment().gamestate.frame
+			frame: simulator.getLastMoment().state.frame
 		});
 		this.server.removeClient(this);
 		console.log('disconnected');
