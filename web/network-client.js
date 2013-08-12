@@ -57,11 +57,11 @@ define(['./utils'],function(utils) {
 		return frames*(1000/30);
 	}
 	function handleAck(msg) {
-		var now = this.simulator.getLastTimeFrame().gamestate.frame;
+		var now = this.simulator.getLastMoment().gamestate.frame;
 		var roundtripFrames = now - msg.oframe;
 		var clientFrames = msg.oframe + roundtripFrames*0.5;
 		var framesDifference = clientFrames - msg.nframe;
-		this.simulator.disposeTimeFramesBefore(msg.stableframe);
+		this.simulator.disposeMomentsBefore(msg.stableframe);
 
 		if (-framesDifference >= this.simulator.maxFramesInHistory) {
 			// We're too far behind compared to the server, so we
@@ -101,7 +101,7 @@ define(['./utils'],function(utils) {
 	function synchronizeTime() {
 		this.messenger.send({
 			type: 'syn',
-			frame: this.simulator.getLastTimeFrame().gamestate.frame
+			frame: this.simulator.getLastMoment().gamestate.frame
 		});
 	}
 	function stop() {

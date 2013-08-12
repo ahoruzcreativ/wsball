@@ -107,8 +107,8 @@ function handleKeyMsg(msg) {
 		key: msg.key,
 		countid: msg.countid
 	});
-	if (msg.frame < simulator.timeframes[simulator.timeframes.length-1].gamestate.frame) {
-		msg.frame = simulator.timeframes[simulator.timeframes.length-1].gamestate.frame;
+	if (msg.frame < simulator.moments[simulator.moments.length-1].gamestate.frame) {
+		msg.frame = simulator.moments[simulator.moments.length-1].gamestate.frame;
 		console.log('Detected old message from client',this.id);
 		sendReset();
 	}
@@ -174,11 +174,11 @@ app.ws.usepath('/rooms',function(req,next) {
 app.listen(8085);
 
 function update() {
-	var tf = simulator.getLastTimeFrame();
+	var tf = simulator.getLastMoment();
 	process.stdout.write('\r' + [
 		'@'+tf.gamestate.frame,
 		'!'+simulator.futureEvents.length,
-		'|'+simulator.timeframes.length,
+		'|'+simulator.moments.length,
 		':'+tf.gamestate.players.length,
 		'*'+tf.events.length,
 		tf.gamestate.players.map(function(player) {
@@ -187,14 +187,14 @@ function update() {
 		].join(' '));
 	updateGame();
 
-	// Trim timeframes that will never be used (the oldest timeframe in use by clients)
+	// Trim moments that will never be used (the oldest moment in use by clients)
 	var minimalframe = clients.reduce(function(prev,client) {
 		return client.lastframe < prev ? client.lastframe : prev;
 	},simulator.getLastFrame());
-	while (simulator.timeframes.length > 0 && simulator.timeframes[simulator.timeframes.length-1].gamestate.frame < minimalframe) {
-		simulator.timeframes.pop();
+	while (simulator.moments.length > 0 && simulator.moments[simulator.moments.length-1].gamestate.frame < minimalframe) {
+		simulator.moments.pop();
 	}
-	/*var curframe = getLastTimeFrame().gamestate.frame;
+	/*var curframe = getLastMoment().gamestate.frame;
 	clients.forEach(function(client) {
 		if (curframe - client.lastsyn < 30) { return; }
 		client.lastsyn = curframe;

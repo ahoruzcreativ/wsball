@@ -146,7 +146,7 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 		}
 
 		function getPlayer() {
-			return simulator.getLastTimeFrame().gamestate.players.filter(function(player) {
+			return simulator.getLastMoment().gamestate.players.filter(function(player) {
 				return player.clientid === networkClient.clientid
 			})[0];
 		}
@@ -189,12 +189,12 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 		var counter = 0;
 		function inputEvent(event) {
 			if (networkClient.status !== NetworkClient.STATUS_ACTIVE) { return; }
-			var timeframe = simulator.getLastTimeFrame();
+			var moment = simulator.getLastMoment();
 			simulator.pushEvent(Object.merge({
 				clientid: networkClient.clientid
 			},event));
 			messenger.send(Object.merge({
-				frame: timeframe.gamestate.frame
+				frame: moment.gamestate.frame
 			},event));
 		}
 		function keydown(key) {
@@ -453,7 +453,7 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 		}));
 		var hud = overlay(createCanvas(800,600,function(g) {
 			g.clear();
-			var gamestate = simulator.getLastTimeFrame().gamestate;
+			var gamestate = simulator.getLastMoment().gamestate;
 
 			g.context.font = 'bold 42pt arial';
 
@@ -464,7 +464,7 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 		}));
 
 		var debug = overlay(createCanvas(200,300,function(g) {
-			var gamestate = simulator.getLastTimeFrame().gamestate;
+			var gamestate = simulator.getLastMoment().gamestate;
 			g.clear();
 			// Draw HUD
 			g.fillStyle('white');
@@ -472,7 +472,7 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 			g.fillText('latencySolving: '+round(networkClient.latencySolving),100,110);
 			g.fillText('Latency: '+round(networkClient.latencyMs),100,120);
 			g.fillText('Scores: '+gamestate.scores[0] + ' - ' + gamestate.scores[1],100,130);
-			g.fillText('FrameBuffer: '+simulator.timeframes.length,100,140);
+			g.fillText('FrameBuffer: '+simulator.moments.length,100,140);
 		}));
 
 		function draw(g,next) {
@@ -483,22 +483,22 @@ define(['platform','game','vector','staticcollidable','linesegment','editor','re
 			//g.drawImage(field,0,0,800,600,0,0,800,600);
 
 
-			var drawHistory = Math.min(1,simulator.timeframes.length);
+			var drawHistory = Math.min(1,simulator.moments.length);
 			for(var i=drawHistory-1;i>=0;i--) {
-				var timeframe = simulator.timeframes[i];
+				var moment = simulator.moments[i];
 				g.context.globalAlpha = 1-(i/drawHistory);
 
 				// Draw player shadows
-				drawMultiple(g,timeframe.gamestate.players,drawPlayerShadow);
+				drawMultiple(g,moment.gamestate.players,drawPlayerShadow);
 
 				// Draw ball shadow
-				drawBallShadow(g,timeframe.gamestate.ball);
+				drawBallShadow(g,moment.gamestate.ball);
 
 				// Draw player bodies
-				drawMultiple(g,timeframe.gamestate.players,drawPlayer);
+				drawMultiple(g,moment.gamestate.players,drawPlayer);
 
 				// Draw ball
-				drawBall(g,timeframe.gamestate.ball);
+				drawBall(g,moment.gamestate.ball);
 			}
 			if (networkClient.status !== NetworkClient.STATUS_ACTIVE) {
 				console.log('NOT ACTIVE!');

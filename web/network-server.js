@@ -36,7 +36,7 @@ define(['./utils'],function(utils) {
 			this.clients.push(client);
 
 			// Initialize client.
-			this.simulator.getLastTimeFrame().events.push({
+			this.simulator.getLastMoment().events.push({
 				type: 'connect',
 				clientid: client.id
 			});
@@ -84,7 +84,7 @@ define(['./utils'],function(utils) {
 				.reduce(function(a,b) {
 					return Math.min(a,b);
 				}, Infinity);
-			this.simulator.disposeTimeFramesBefore(this.stableframe);
+			this.simulator.disposeMomentsBefore(this.stableframe);
 		};
 		p.close = function() {
 			clearTimeout(this.gameupdateTimeout);
@@ -122,14 +122,14 @@ define(['./utils'],function(utils) {
 	}
 	function handleDisconnect() {
 		var simulator = this.server.simulator;
-		simulator.getLastTimeFrame().events.push({
+		simulator.getLastMoment().events.push({
 			type: 'disconnect',
 			clientid: this.id
 		});
 		this.broadcast({
 			type: 'disconnect',
 			clientid: this.id,
-			frame: simulator.getLastTimeFrame().gamestate.frame
+			frame: simulator.getLastMoment().gamestate.frame
 		});
 		this.server.removeClient(this);
 		console.log('disconnected');
