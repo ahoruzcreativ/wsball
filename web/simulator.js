@@ -7,7 +7,6 @@
 // moment -- A state and the events that happen in a specific frame.
 // frame -- An incrementing number that is used for identifing a moment in time.
 // state -- A user-specified state of a certain point in time.
-// 
 // prehistoric moment -- A moment that is too old to remember (it was disposed).
 
 define(['./utils'],function(utils) {
@@ -26,6 +25,7 @@ define(['./utils'],function(utils) {
 	Simulator.defaultMaxFramesInHistory = -1;
 
 	(function(p) {
+		// Recalculate all states from specified frame using all existing events.
 		p.recalculateStates = function(fromframe) {
 			var now = this.moments[0].state.frame;
 			for(var frame=fromframe;frame<now;frame++) {
@@ -34,11 +34,16 @@ define(['./utils'],function(utils) {
 				this.getMoment(frame+1).state = newState;
 			}
 		};
+
+		// Disposes all moments before frame. After calling, all
+		// frames before the specified frame will be prehistoric.
 		p.forgetMomentsBefore = function(frame) {
 			while (this.moments.length > 1 && this.moments[this.moments.length-1].state.frame < frame) {
 				this.moments.pop();
 			}
 		};
+
+		// Calculate the next state from the current state and current events.
 		p.nextStateFromMoment = function(moment) {
 			return this.game.update(moment.state, moment.events);
 		};
@@ -72,6 +77,9 @@ define(['./utils'],function(utils) {
 				}
 			}
 		};
+
+		// Fast-forward to the specified frame: keep advancing the simulator
+		// until we're at the specified frame, making sure getCurrentFrame === frame.
 		p.fastForward = function(frame) {
 			utils.debug('!FASTFORWARD: from frame',this.getCurrentFrame(),'to frame',frame);
 			while(this.getCurrentFrame() < frame) {
@@ -79,6 +87,8 @@ define(['./utils'],function(utils) {
 			}
 			utils.debug('!FASTFORWARDED: to frame',this.getCurrentFrame());
 		};
+
+		// Push event into current moment, to be used for the next moment.
 		p.pushEvent = function(event) {
 			this.insertEvent(this.getCurrentFrame(),event);
 		};
@@ -148,6 +158,8 @@ define(['./utils'],function(utils) {
 			return frame < this.getOldestFrame();
 		};
 
+		// Returns the moment at the specified frame.
+		// A error will be thrown when the frame is in the future or forgotten.
 		p.getMoment = function(frame) {
 			var frameIndex = this.moments[0].state.frame - frame;
 			utils.assert(frameIndex >= 0, 'The frame '+frame+' was newer than the last frame '+this.moments[0].state.frame);
@@ -155,6 +167,7 @@ define(['./utils'],function(utils) {
 			return this.moments[frameIndex];
 		};
 
+		// Retrieve the latest moment.
 		p.getCurrentMoment = function() {
 			return this.moments[0];
 		};
@@ -165,6 +178,7 @@ define(['./utils'],function(utils) {
 			return this.moments[0].state.frame;
 		};
 
+		// Retrieve oldest known moment; The moment just before becoming prehistoric.
 		p.getOldestMoment = function() {
 			return this.moments[this.moments.length-1].state;
 		};
