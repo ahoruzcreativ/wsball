@@ -35,7 +35,7 @@ define(['./utils'],function(utils) {
 			}
 		};
 		p.disposeTimeFramesBefore = function(frame) {
-			while (this.timeframes[this.timeframes.length-1].gamestate.frame < frame) {
+			while (this.timeframes.length > 1 && this.timeframes[this.timeframes.length-1].gamestate.frame < frame) {
 				this.timeframes.pop();
 			}
 		};
