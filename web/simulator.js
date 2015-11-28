@@ -19,6 +19,7 @@ define(['./utils'],function(utils) {
 		}];
 		this.game = game;
 		this.maxRememberedMoments = Simulator.defaultMaxRememberedMoments;
+		utils.assert(this.getCurrentState().frame === 0);
 	}
 
 	// No maximum of frames: handle frame removal yourself.
@@ -45,7 +46,9 @@ define(['./utils'],function(utils) {
 
 		// Calculate the next state from the current state and current events.
 		p.nextStateFromMoment = function(moment) {
-			return this.game.update(moment.state, moment.events);
+			var newstate = this.game.update(moment.state, moment.events);
+			utils.assert(newstate.frame === (moment.state.frame+1));
+			return newstate;
 		};
 
 		// Increments the game one frame.
